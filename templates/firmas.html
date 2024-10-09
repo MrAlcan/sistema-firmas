@@ -1,0 +1,120 @@
+{% extends 'layout.html' %}
+{% block body %}
+<div class="content-wrapper">
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Verificación de la Firma</h1>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content">
+      <div class="container-fluid">
+          <div class="row">
+              <div class="col-12">
+                  <div class="card">
+                      <div class="card-header">
+                          <h3 class="card-title">Listado de Firmas Verificadas</h3>
+                      </div>
+                      <!-- /.card-header -->
+                      <div class="card-body">
+                          <table id="example2" class="table table-bordered table-hover">
+                              <thead>
+                                  <tr>
+                                      <th>ID del Caso</th>
+                                      <th>Firma Indubitada</th>
+                                      <th>Firma Dubitada</th>
+                                      <th>Resultado</th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                  {% for firma in firmas %}
+                                  <tr>
+                                      <td>{{ firma['id_caso'] }}</td>
+                                      <td>
+                                          <img src="{{ url_for('static', filename='uploads/' + firma['f_indubitada']) }}" alt="Firma Indubitada" style="max-width: 100px;">
+                                      </td>
+                                      <td>
+                                          <img src="{{ url_for('static', filename='uploads/' + firma['f_dubitada']) }}" alt="Firma Dubitada" style="max-width: 100px;">
+                                      </td>
+                                      <td>{{ firma['tipo_caso'] }}</td>
+                                  </tr>
+                                  {% endfor %}
+                              </tbody>
+                          </table>
+                      </div>
+                      <!-- /.card-body -->
+                  </div>
+                  <!-- /.card -->
+              </div>
+          </div>
+      </div>
+  </section>
+  
+    
+
+    <section class="content">
+        <div class="container-fluid">
+          <div class="row justify-content-center">
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Sube las imágenes de las firmas para verificación</h3>
+                </div>
+                <div class="card-body">
+                  <form id="signatureForm" action="/predict" method="post" enctype="multipart/form-data">
+                      <div class="row">
+                          <div class="col-md-6 text-center">
+                              <label for="imageDoubtful">Firma Dubitada</label><br>
+                              <input type="file" name="imageDoubtful" id="imageDoubtful" required onchange="previewImage('imageDoubtful', 'imagePreviewDoubtful');">
+                              <img id="imagePreviewDoubtful" style="display: none; max-width: 500px; max-height: 300px;" />
+                          </div>
+                          <div class="col-md-6 text-center">
+                              <label for="imageIndubitable">Firma Indubitada</label><br>
+                              <input type="file" name="imageIndubitable" id="imageIndubitable" required onchange="previewImage('imageIndubitable', 'imagePreviewIndubitable');">
+                              <img id="imagePreviewIndubitable" style="display: none; max-width: 500px; max-height: 300px;" />
+                          </div>
+                      </div>
+                      <div class="modal-footer justify-content-center">
+                          <button type="submit" class="btn btn-primary btn-flat">Verificar</button>
+                      </div>
+                  </form>
+
+                  <!-- Mostrar resultado de la predicción -->
+                  {% if result %}
+                  <div class="alert alert-info mt-3">
+                    <p><strong>{{ result }} con un porcentaje de {{ percentage }}%</strong></p>
+                  </div>
+                  {% endif %}
+
+                  <!-- Mostrar imagen procesada por YOLO -->
+                  {% if yolo_image %}
+                  <div class="text-center mt-3">
+                    <h4>Resultado en la Firma Dubitada</h4>
+                    <img src="{{ url_for('show_yolo_image', filename=yolo_image.split('/')[-1]) }}" alt="Resultado YOLO">
+                  </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+    </section>
+</div>
+
+<script>
+  function previewImage(inputId, previewId) {
+    var file = document.getElementById(inputId).files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById(previewId).src = e.target.result;
+      document.getElementById(previewId).style.display = 'block';
+    }
+    reader.readAsDataURL(file);
+  }
+</script>
+
+{% endblock %}

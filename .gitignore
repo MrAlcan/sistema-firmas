@@ -1,0 +1,4 @@
+venv/
+runs/detect/
+uploads/
+traced_model.pt
