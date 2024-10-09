@@ -1,4 +1,9 @@
 venv/
 runs/detect/
 uploads/
+static/uploads/
+static/Users_Profile/
+static/img/
+__pycache__/
+best.pt
 traced_model.pt
