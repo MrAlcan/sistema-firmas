@@ -1,5 +1,6 @@
 from flask import Flask, flash, render_template, request, redirect, session, Response, url_for, send_from_directory, send_from_directory, abort
 from flask_mysqldb import MySQL, MySQLdb
+from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import numpy as np
@@ -9,7 +10,41 @@ from tensorflow.keras.models import load_model
 import subprocess
 import torch
 import shutil
+import json
+import base64
+import random
 """ from pymysql.cursors import DictCursor  # Importación adicional necesaria """
+
+def generar_codigo():
+    return random.randint(100000, 999999)
+
+
+
+def serializar_fecha(fecha):
+    if isinstance(fecha, datetime):
+        return fecha.strftime("%Y-%m-%d %H:%M:%S")
+
+def deserializar_fecha(fecha):
+        if isinstance(fecha, str):
+            try:
+                # Intenta convertir la cadena a datetime
+                fecha = datetime.strptime(fecha, "%Y-%m-%d %H:%M:%S")
+                return fecha
+            except ValueError:
+                pass  # No es un datetime, no hacer nada
+
+def encriptar_json(data):
+    json_data = json.dumps(data).encode()
+    print("json_data:    ", json_data)
+    data_encriptada = base64.b64encode(json_data)
+    print("json_escriptado:       ", data_encriptada)
+    return data_encriptada
+    
+def desencriptar_json(data_encriptada):
+    data_desencriptada = base64.b64decode(data_encriptada)
+    print(data_desencriptada)
+    print(data_desencriptada.decode())
+    return json.loads(data_desencriptada.decode())
 
 app = Flask(__name__, template_folder='templates')
 
@@ -23,9 +58,25 @@ if os.path.exists(model_path):
 else:
     print(f"El archivo del modelo no se encontró en: {model_path}")
 
+
+
+
+
+
 # Asegúrate de configurar la SECRET_KEY para usar sesiones
 app.secret_key = 'BFERNANDOHC'
+#aara enviar correos_ :c :p
 
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USERNAME'] = 'jhonsantoslimachi@gmail.com'
+app.config['MAIL_PASSWORD'] = 'bwfw vevs lscf ngvt'
+app.config['MAIL_USE_TLS'] = True
+mail = Mail(app)
+def enviar_codigo_por_correo(correo, codigo):
+    msg = Message('Tu código de verificación', sender='jhonsantoslimachi@gmail.com', recipients=[correo])
+    msg.body = f'Tu código de verificación es {codigo}'
+    mail.send(msg)
 # Configuración de la base de datos
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
@@ -34,6 +85,8 @@ app.config['MYSQL_DB'] = 'poldocu'
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'  # Configuración para usar DictCursor
 
 mySQL = MySQL(app)
+
+
 
 # Define la carpeta de destino para las imágenes de perfil
 UPLOAD_FOLDER = 'static/Users_Profile/'
@@ -73,6 +126,25 @@ def login():
         account = cur.fetchone()
 
         if account:
+            codigo_generado = generar_codigo()
+
+            correo_usuario = account['email']
+
+            enviar_codigo_por_correo(correo_usuario, codigo_generado)
+            
+            cur.execute('UPDATE usuario SET codigo_sesion = %s WHERE id_usuario = %s', (codigo_generado, account['id_usuario']))
+            mySQL.connection.commit()
+            fecha = serializar_fecha(account['fecha'])
+            cuerpo = {
+                'id_usuario' : account['id_usuario'],
+                'nombre' : account['nombre'],
+                'apellido' : account['apellido'],
+                'rol' : account['admin'],
+                'fecha' : fecha
+            }
+            cuerpo_encriptado = str(encriptar_json(cuerpo))
+            cuerpo_encriptado = cuerpo_encriptado[2:len(cuerpo_encriptado)-1]
+            return redirect(url_for('verificacion', cuerpo=cuerpo_encriptado))
             # Guardar los detalles del usuario en la sesión
             session['logueado'] = True
             session['id_usuario'] = account['id_usuario']
@@ -88,6 +160,36 @@ def login():
     # Si el método es GET, simplemente renderiza la página de login
     return render_template('login.html')
 
+@app.route('/verificacion/<cuerpo>', methods=['GET', 'POST'])
+def verificacion(cuerpo):
+    datos_usuario = desencriptar_json(cuerpo)
+    print(datos_usuario)
+    cur = mySQL.connection.cursor()
+    cur.execute('SELECT * FROM usuario WHERE id_usuario = %s', (str(datos_usuario['id_usuario'])))
+    account = cur.fetchone()
+    codigo_verificacion = account['codigo_sesion']
+    fecha = deserializar_fecha(datos_usuario['fecha'])
+    if request.method=='POST':
+        codigo_enviado = request.form['codigo_ver']
+        print('-'*50)
+        print('codigo from', codigo_enviado)
+        print(' codigo db', codigo_verificacion)
+        if str(codigo_enviado)==str(codigo_verificacion):
+            print('entra')
+            session['logueado'] = True
+            session['id_usuario'] = account['id_usuario']
+            session['nombre'] = account['nombre']  # Guarda el nombre del usuario en la sesión
+            session['apellido'] = account['apellido']  # Guarda el apellido del usuario en la sesión
+            session['admin'] = account['admin']
+            session['fecha'] = account['fecha']  # Guarda la fecha de creación en la sesión
+            return redirect(url_for('dashboard'))
+        else:
+            print('no entra')
+            flash('Código incorrecto', 'error')  # Mensaje de error
+            return redirect(url_for('verificacion', cuerpo=cuerpo))  # Redirige de nuevo al login
+    return render_template('verificacion.html')
+    
+
 @app.route('/logout', methods=['POST'])
 def logout():
     # Eliminar las variables de sesión al cerrar sesión
@@ -95,6 +197,8 @@ def logout():
     session.pop('id_usuario', None)
     session.pop('nombre', None)
     session.pop('apellido', None)
+    session.pop('admin', None)
+    session.pop('fecha', None)
     # Redirigir al login después de cerrar sesión
     return redirect(url_for('login'))  # Esto debe ser el nombre de la función de vista
 

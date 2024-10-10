@@ -5,6 +5,8 @@ uploads/*
 static/uploads/*
 static/Users_Profile/*
 static/img/*
+signature_verification/*
+!signature_verification/.gitkeep
 !uploads/.gitkeep
 !static/uploads/.gitkeep
 !static/Users_Profile/.gitkeep
