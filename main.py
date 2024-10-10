@@ -111,7 +111,14 @@ def home():
 
 @app.route('/dashboard')
 def dashboard():
-    return render_template('dashboard.html')
+    conexion = mySQL.connection
+    cur = conexion.cursor()
+
+    cur.execute("SELECT * FROM caso WHERE activo = 1 ORDER BY fecha_modificado DESC LIMIT 10")
+    #cur.execute("SELECT * FROM caso ORDER BY fecha_modificado DESC")
+    casos = cur.fetchall()
+    cur.close()
+    return render_template('dashboard.html', casos=casos)
 
 # INICIO DE SESION (INICIO)
 
@@ -175,6 +182,17 @@ def verificacion(cuerpo):
         print('codigo from', codigo_enviado)
         print(' codigo db', codigo_verificacion)
         if str(codigo_enviado)==str(codigo_verificacion):
+            '''
+            nombre varchar(500),
+            apellido varchar(500),
+            ci varchar(500),
+            telefono varchar(500),
+            edad varchar(500),
+            imagen varchar(500),
+            sexo varchar(500),
+            email varchar(500),
+            usuario varchar(500),
+            password varchar(500),'''
             print('entra')
             session['logueado'] = True
             session['id_usuario'] = account['id_usuario']
@@ -182,6 +200,14 @@ def verificacion(cuerpo):
             session['apellido'] = account['apellido']  # Guarda el apellido del usuario en la sesión
             session['admin'] = account['admin']
             session['fecha'] = account['fecha']  # Guarda la fecha de creación en la sesión
+            session['carnet'] = account['ci']
+            session['telefono'] = account['telefono']
+            session['edad'] = account['edad']
+            session['imagen'] = account['imagen']
+            session['sexo'] = account['sexo']
+            session['email'] = account['email']
+            session['usuario'] = account['usuario']
+            session['contrasena'] = account['password']
             return redirect(url_for('dashboard'))
         else:
             print('no entra')
@@ -199,6 +225,14 @@ def logout():
     session.pop('apellido', None)
     session.pop('admin', None)
     session.pop('fecha', None)
+    session.pop('carnet',None)
+    session.pop('telefono',None)
+    session.pop('edad',None)
+    session.pop('imagen',None)
+    session.pop('sexo',None)
+    session.pop('email',None)
+    session.pop('usuario',None)
+    session.pop('contrasena',None)
     # Redirigir al login después de cerrar sesión
     return redirect(url_for('login'))  # Esto debe ser el nombre de la función de vista
 
@@ -236,9 +270,13 @@ def new_user():
         # Validación de imagen subida
         imagen = request.files['imagen']
         imagen_filename = None
+        carpeta_usuario = os.path.join(app.config['UPLOAD_FOLDER'], "perfil_usuarios")
+        if not os.path.exists(carpeta_usuario):
+            # Si no existe, crear la carpeta
+            os.makedirs(carpeta_usuario)
         if imagen and allowed_file(imagen.filename):
             imagen_filename = secure_filename(imagen.filename)
-            imagen.save(os.path.join(app.config['UPLOAD_FOLDER'], imagen_filename))
+            imagen.save(os.path.join(carpeta_usuario, imagen_filename))
 
         # Validación: Verificar que los campos no estén vacíos
         if not nombre or not apellido or not cedula or not celular or not email or not user or not password or not edad:
@@ -273,6 +311,49 @@ def new_user():
         return redirect(url_for('usuarios'))
   # Redirige a la página 'usuarios.html'
 
+@app.route('/editar_perfil/<id>', methods=['POST'])
+def editar_perfil(id):
+    celular = request.form['celular']
+    email = request.form['email']
+    usuario = request.form['user']
+    password = request.form['password']
+    # Obtener la imagen (si se proporciona una nueva)
+    imagen = request.files['imagen']
+    imagen_actual = request.form['imagen_actual']  # Imagen actual
+
+    session['telefono'] = celular
+    
+    session['email'] = email
+    session['usuario'] = usuario
+    session['contrasena'] = password
+
+    # Comprobar si el usuario ha subido una nueva imagen
+    if imagen.filename != '':
+        # Guardar la imagen en la carpeta 'Users_Profile'
+        imagen.save(os.path.join('static/Users_Profile/perfil_usuarios', imagen.filename))
+        imagen_a_guardar = imagen.filename
+        session['imagen'] = imagen_a_guardar
+    else:
+        imagen_a_guardar = imagen_actual  # Si no se carga una nueva imagen, conservar la actual
+
+    # Obtener la fecha y hora actual
+    fecha_modeficacion = datetime.now()
+
+    # Actualizar el usuario en la base de datos
+    cur = mySQL.connection.cursor()
+    cur.execute("""
+        UPDATE usuario 
+        SET telefono=%s, email=%s, usuario=%s, password=%s, imagen=%s, fecha_modeficacion=%s 
+        WHERE id_usuario=%s
+    """, (celular, email, usuario, password, imagen_a_guardar, fecha_modeficacion, id))
+    
+    mySQL.connection.commit()
+    cur.close()
+
+    # Redirigir a la lista de usuarios
+    return redirect(url_for('usuarios'))
+
+
 
 @app.route('/edit_user/<int:id>', methods=['POST'])
 def edit_user(id):
@@ -286,6 +367,7 @@ def edit_user(id):
     usuario = request.form['user']
     password = request.form['password']
     sexo = request.form['sexo']
+    print(request.form)
 
     # Obtener la imagen (si se proporciona una nueva)
     imagen = request.files['imagen']
@@ -294,7 +376,7 @@ def edit_user(id):
     # Comprobar si el usuario ha subido una nueva imagen
     if imagen.filename != '':
         # Guardar la imagen en la carpeta 'Users_Profile'
-        imagen.save(os.path.join('static/Users_Profile', imagen.filename))
+        imagen.save(os.path.join('static/Users_Profile/perfil_usuarios', imagen.filename))
         imagen_a_guardar = imagen.filename
     else:
         imagen_a_guardar = imagen_actual  # Si no se carga una nueva imagen, conservar la actual
@@ -355,6 +437,7 @@ def new_case():
         nombre_caso = request.form['nombre_caso']
         descripcion = request.form['descripcion']
         departamento = request.form['departamento']
+        id_usuario_creado = session['id_usuario']
         
         # Obtener los archivos de firma
         f_dubitada = request.files['f_dubitada']
@@ -383,9 +466,9 @@ def new_case():
         # Insertar los datos en la tabla `caso`
         cur = mySQL.connection.cursor()
         cur.execute("""
-            INSERT INTO caso (usuario_id, tipo_caso, nombre_caso, descripcion, departamento, fecha, f_dubitada, f_indubitada)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """, (usuario_id, tipo_caso, nombre_caso, descripcion, departamento, fecha_actual, f_dubitada_filename, f_indubitada_filename))
+            INSERT INTO caso (usuario_id, tipo_caso, nombre_caso, descripcion, departamento, fecha, f_dubitada, f_indubitada, id_usuario_creado, id_usuario_modificado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (usuario_id, tipo_caso, nombre_caso, descripcion, departamento, fecha_actual, f_dubitada_filename, f_indubitada_filename, id_usuario_creado, id_usuario_creado))
         mySQL.connection.commit()
 
         flash('Caso agregado exitosamente', 'success')
@@ -397,7 +480,7 @@ def new_case():
 @app.route('/listar_casos')
 def listar_casos():
     cur = mySQL.connection.cursor()
-    cur.execute("SELECT * FROM caso")
+    cur.execute("SELECT * FROM caso WHERE activo = 1")
     casos = cur.fetchall()
     return render_template('list_casos.html', casos=casos)
 
@@ -518,6 +601,37 @@ def show_yolo_image(filename):
     except Exception as e:
         return f"Error al buscar la imagen procesada: {str(e)}", 500
 
+@app.route('/ver/caso/<id>', methods=['GET'])
+def ver_caso(id):
+    conexion = mySQL.connection
+    cur = conexion.cursor()
+
+    cur.execute("SELECT * FROM caso WHERE id_caso = %s", (id,))
+    
+    caso = cur.fetchone()
+    cur.close()
+
+    return render_template('ver_caso.html', caso=caso)
+
+@app.route('/editar/caso/<id>', methods=['POST'])
+def editar_caso(id):
+    print(id)
+    id_usuario_modificado = session['id_usuario']
+    nombre_caso = request.form['nombre_caso']
+    descripcion_caso = request.form['descripcion']
+    cur = mySQL.connection.cursor()
+    cur.execute('UPDATE caso SET nombre_caso = %s, descripcion = %s, id_usuario_modificado = %s WHERE id_caso = %s', (nombre_caso, descripcion_caso, id, id_usuario_modificado))
+    mySQL.connection.commit()
+
+    return redirect(url_for('listar_casos'))
+
+@app.route('/borrar/caso/<id>', methods=['GET'])
+def borrar_caso(id):
+    print(id)
+    cur = mySQL.connection.cursor()
+    cur.execute('UPDATE caso SET activo = 0 WHERE id_caso = %s', (id))
+    mySQL.connection.commit()
+    return redirect(url_for('listar_casos'))
 
 if __name__ == '__main__':
     app.run(debug=True)

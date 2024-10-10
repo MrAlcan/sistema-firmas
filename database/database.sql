@@ -39,7 +39,7 @@ CREATE TABLE caso (
     activo boolean default 1,
     id_usuario_creado INT,
     id_usuario_modificado INT,
-    fecha_creado DATETIME,
-    fecha_modificado DATETIME,
+    fecha_creado DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_modificado DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES usuario(id_usuario)  -- Clave foránea que referencia a la tabla usuario
 );

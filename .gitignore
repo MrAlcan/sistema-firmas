@@ -4,6 +4,8 @@ runs/detect/*
 uploads/*
 static/uploads/*
 static/Users_Profile/*
+static/Users_Profile/perfil_usuarios/*
+!static/Users_Profile/perfil_usuarios/.gitkeep
 static/img/*
 signature_verification/*
 !signature_verification/.gitkeep

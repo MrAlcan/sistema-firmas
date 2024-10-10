@@ -7,28 +7,28 @@
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet"href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback"/>
     <!-- Font Awesome -->
-    <link rel="stylesheet"href="static/plugins/fontawesome-free/css/all.min.css"/>
+    <link rel="stylesheet"href="{{url_for('static', filename='/plugins/fontawesome-free/css/all.min.css')}}"/>
     <!-- DataTables -->
-    <link rel="stylesheet"href="static/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css"/>
-    <link rel="stylesheet"href="static/plugins/datatables-responsive/css/responsive.bootstrap4.min.css"/>
-    <link rel="stylesheet"href="static/plugins/datatables-buttons/css/buttons.bootstrap4.min.css"/>
+    <link rel="stylesheet"href="{{url_for('static', filename='/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css')}}"/>
+    <link rel="stylesheet"href="{{url_for('static', filename='/plugins/datatables-responsive/css/responsive.bootstrap4.min.css')}}"/>
+    <link rel="stylesheet"href="{{url_for('static', filename='/plugins/datatables-buttons/css/buttons.bootstrap4.min.css')}}"/>
     <!-- IonIcons -->
     <link rel="stylesheet"href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css"/>
     <!--  -->
-    <link rel="stylesheet"href="static/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css"/>
-    <link rel="stylesheet"href="static/plugins/icheck-bootstrap/icheck-bootstrap.min.css"/>
-    <link rel="stylesheet" href="static/plugins/jqvmap/jqvmap.min.css" />
+    <link rel="stylesheet"href="{{url_for('static', filename='/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css')}}"/>
+    <link rel="stylesheet"href="{{url_for('static', filename='/plugins/icheck-bootstrap/icheck-bootstrap.min.css')}}"/>
+    <link rel="stylesheet" href="{{url_for('static', filename='/plugins/jqvmap/jqvmap.min.css')}}"/>
     <!-- Theme style -->
-    <link rel="stylesheet" href="static/css/adminlte.min.css" />
+    <link rel="stylesheet" href="{{url_for('static', filename='/css/adminlte.min.css')}}"/>
     <!-- overlayScrollbars -->
-    <link rel="stylesheet"href="static/plugins/overlayScrollbars/css/OverlayScrollbars.min.css"/>
+    <link rel="stylesheet"href="{{url_for('static', filename='/plugins/overlayScrollbars/css/OverlayScrollbars.min.css')}}"/>
     <!--  -->
-    <link rel="stylesheet"href="static/plugins/daterangepicker/daterangepicker.css"/>
-    <link rel="stylesheet"href="static/plugins/summernote/summernote-bs4.min.css"/>
+    <link rel="stylesheet"href="{{url_for('static', filename='/plugins/daterangepicker/daterangepicker.css')}}"/>
+    <link rel="stylesheet"href="{{url_for('static', filename='/plugins/summernote/summernote-bs4.min.css')}}"/>
     <!-- SweetAlert2 -->
-    <link rel="stylesheet" href="static/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <link rel="stylesheet" href="{{url_for('static', filename='/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css')}}"/>
     <!-- Toastr -->
-    <link rel="stylesheet" href="static/plugins/toastr/toastr.min.css">
+    <link rel="stylesheet" href="{{url_for('static', filename='/plugins/toastr/toastr.min.css')}}"/>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   </head>
@@ -40,7 +40,7 @@
       >
         <img
           class="animation__wobble"
-          src="static/img/AdminLTELogo.png"
+          src="{{url_for('static', filename='/img/AdminLTELogo.png')}}"
           alt="AdminLTELogo"
           height="60"
           width="60"
@@ -78,7 +78,8 @@
             <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
               <div class="dropdown-item user-header text-center">
                 <img
-                  src="static/img/user2-160x160.jpg"
+                  src="{{ url_for('static', filename='Users_Profile/perfil_usuarios/' + session['imagen']) }}"
+                  style="width: 150px; height: 150px;"
                   class="img-circle"
                   alt="User Image"
                 />
@@ -92,7 +93,11 @@
               <!-- Footer with profile and logout -->
               <div class="dropdown-item user-footer">
                 <div class="d-flex justify-content-between">
-                  <a href="#perfil">Perfil</a>
+                  
+                  <a href="" class="" type="button" data-toggle="modal" data-target="#modal-editar-perfil">Perfil</a>
+                  <!--button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#modal-editar-perfil">Editar</button-->
+                  
+                  
                   
                   <!-- Botón de Cerrar Sesión con formulario POST -->
                   <form action="{{ url_for('logout') }}" method="POST">
@@ -100,6 +105,7 @@
                   </form>
                 </div>
               </div>
+              
             </div>
           </li>          
           
@@ -130,7 +136,8 @@
           <div class="user-panel mt-1 pb-1 mb-1 d-flex align-items-center">
             <div class="image">
               <img
-                src="static/img/user2-160x160.jpg"
+                src="{{ url_for('static', filename='Users_Profile/perfil_usuarios/' + session['imagen']) }}"
+                
                 class="img-circle elevation-2"
                 alt="User Image"
               />
@@ -246,37 +253,127 @@
         </div>
       </footer> -->
     </div>
+    <div class="modal fade" id="modal-editar-perfil">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h4 class="modal-title"><i class="fa fa-user"></i><b> Perfil de Usuario</b></h4>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form action="/editar_perfil/{{session['id_usuario']}}" method="POST" enctype="multipart/form-data" id="new-user-form">
+              <div class="row">
+                <div class="col-md-6">
+                  <!-- Nombre con un máximo de 20 caracteres -->
+                  <div class="form-group">
+                    <label for="nombre">Nombre(s)</label>
+                    <input type="text" class="form-control" name="Nombre" value="{{session['nombre']}}" maxlength="20" readonly>
+                  </div>
+
+                  <!-- Apellido con un máximo de 20 caracteres -->
+                  <div class="form-group">
+                    <label for="apellido">Apellido(s)</label>
+                    <input type="text" class="form-control" name="apellido" value="{{session['apellido']}}" maxlength="20" readonly>
+                  </div>
+
+                  <!-- Edad -->
+                  <div class="form-group">
+                    <label for="edad">Edad</label>
+                    <input type="number" class="form-control" name="edad" value="{{session['edad']}}" readonly>
+                  </div>
+
+                  <!-- CI solo números y máximo de 10 caracteres -->
+                  <div class="form-group">
+                    <label for="ci">CI</label>
+                    <input type="text" class="form-control" name="cedula" value="{{session['carnet']}}" maxlength="10" pattern="\d*" readonly>
+                  </div>
+
+                  <!-- Número de celular solo números y máximo de 10 caracteres -->
+                  <div class="form-group">
+                    <label for="celular">Num. de Celular</label>
+                    <input type="text" class="form-control" name="celular" value="{{session['telefono']}}" maxlength="10" pattern="\d*" required>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <!-- Correo electrónico -->
+                  <div class="form-group">
+                    <label for="email">Correo Electrónico</label>
+                    <input type="email" class="form-control" name="email" value="{{session['email']}}" required>
+                  </div>
+
+                  <!-- Nombre de usuario -->
+                  <div class="form-group">
+                    <label for="user">Nombre de Usuario</label>
+                    <input type="text" class="form-control" name="user" value="{{session['usuario']}}" required>
+                  </div>
+
+                  <!-- Contraseña -->
+                  <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" class="form-control" name="password" value="{{session['contrasena']}}" required>
+                  </div>
+
+                  <!-- Sexo -->
+                  <div class="form-group">
+                    <label for="sexo">Sexo</label>
+                    <input type="text" class="form-control" name="sexo" value="{{session['sexo']}}" readonly/>
+                  </div>
+
+                  <!-- Subir imagen -->
+                  <div class="form-group">
+                    <label for="imagen">Imagen Perfil</label>
+                    <input type="hidden" name="imagen_actual" value="{{ session['imagen'] }}">
+                    {% if session['imagen'] %}
+                      <img src="{{ url_for('static', filename='Users_Profile/perfil_usuarios/' + session['imagen']) }}" alt="IMGPERFIL" style="width: 150px; height: auto;">
+                    {% endif %}
+                    <input type="file" class="form-control-file" name="imagen" id="imagen">
+                  </div>
+                </div>
+              </div>
+
+              <div class="modal-footer justify-content-between">
+                <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-close"></i> Cerrar</button>
+                <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- ./wrapper -->
 
     <!-- REQUIRED SCRIPTS -->
     <!-- jQuery -->
-    <script src="static/plugins/jquery/jquery.min.js"></script>
+    <script src="{{url_for('static', filename='/plugins/jquery/jquery.min.js')}}"></script>
     <!-- Bootstrap 4-->
-    <script src="static/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="{{url_for('static', filename='/plugins/bootstrap/js/bootstrap.bundle.min.js')}}"></script>
     <!-- SweetAlert2 -->
-    <script src="static/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="{{url_for('static', filename='/plugins/sweetalert2/sweetalert2.min.js')}}"></script>
     <!-- Toastr -->
-    <script src="static/plugins/toastr/toastr.min.js"></script>
+    <script src="{{url_for('static', filename='/plugins/toastr/toastr.min.js')}}"></script>
     <!-- overlayScrollbars -->
-    <script src="static/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
+    <script src="{{url_for('static', filename='/plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js')}}"></script>
     <!-- ChartJS -->
-    <script src="static/plugins/chart.js/Chart.min.js"></script>
+    <script src="{{url_for('static', filename='/plugins/chart.js/Chart.min.js')}}"></script>
     <!-- DataTables  & Plugins -->
-    <script src="static/plugins/datatables/jquery.dataTables.min.js"></script>
-    <script src="static/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
-    <script src="static/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
-    <script src="static/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
-    <script src="static/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
-    <script src="static/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
-    <script src="static/plugins/jszip/jszip.min.js"></script>
-    <script src="static/plugins/pdfmake/pdfmake.min.js"></script>
-    <script src="static/plugins/pdfmake/vfs_fonts.js"></script>
-    <script src="static/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
-    <script src="static/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="{{url_for('static', filename='/plugins/datatables/jquery.dataTables.min.js')}}"></script>
+    <script src="{{url_for('static', filename='/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js')}}"></script>
+    <script src="{{url_for('static', filename='/plugins/datatables-responsive/js/dataTables.responsive.min.js')}}"></script>
+    <script src="{{url_for('static', filename='/plugins/datatables-responsive/js/responsive.bootstrap4.min.js')}}"></script>
+    <script src="{{url_for('static', filename='/plugins/datatables-buttons/js/dataTables.buttons.min.js')}}"></script>
+    <script src="{{url_for('static', filename='/plugins/datatables-buttons/js/buttons.bootstrap4.min.js')}}"></script>
+    <script src="{{url_for('static', filename='/plugins/jszip/jszip.min.js')}}"></script>
+    <script src="{{url_for('static', filename='/plugins/pdfmake/pdfmake.min.js')}}"></script>
+    <script src="{{url_for('static', filename='/plugins/pdfmake/vfs_fonts.js')}}"></script>
+    <script src="{{url_for('static', filename='/plugins/datatables-buttons/js/buttons.html5.min.js')}}"></script>
+    <script src="{{url_for('static', filename='/plugins/datatables-buttons/js/buttons.print.min.js')}}"></script>
     <!-- AdminLTE App -->
-    <script src="static/js/adminlte.js"></script>
+    <script src="{{url_for('static', filename='/js/adminlte.js')}}"></script>
     <!-- AdminLTE -->
-    <script src="static/js/pages/dashboard2.js"></script>
+    <script src="{{url_for('static', filename='/js/pages/dashboard2.js')}}"></script>
     <!-- Page specific script -->
     <script>
       $(function () {

@@ -1,0 +1,141 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Descripción del Caso {{caso['id_caso']}}</h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
+              <li class="breadcrumb-item active">Casos</li>
+            </ol>
+          </div>
+        </div>
+      </div><!-- /.container-fluid -->
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+      <!-- Default box -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Informe del Caso N° {{caso['id_caso']}}</h3>
+        </div>
+        <!-- /.card-header -->
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <b>Tipo de Caso:</b>
+                    <p>{{caso['tipo_caso']}}</p>
+                    <b>Nombre del Caso:</b>
+                    <p>{{caso['nombre_caso']}}</p>
+                    <b>Descripción del Caso:</b>
+                    <p>{{caso['descripcion']}}</p>
+                    <b>Departamento del Caso:</b>
+                    <p>{{caso['departamento']}}</p>
+                    <b>Fecha del Caso:</b>
+                    <p>{{caso['fecha']}}</p>
+                    <b>Fecha de Modificación del Caso:</b>
+                    <p>{{caso['fecha_modificado']}}</p>
+                    {% if caso['f_procesada'] %}
+                        <p>proecesado</p>
+                        <!--    FALTA AUMENTAR DATOS DE RESULTADOS    -->
+                        <p></p>
+                    {% else %}
+                        <br/>
+                        <p>Caso No Procesado Aun</p>
+                    {% endif %}
+                </div>
+                <div class="col-md-8">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="row">
+                                <b>Firma Dubitada</b>
+                                <br/>
+                                <br/>
+                            </div>
+                            <div class="row">
+                                <img src="{{ url_for('static', filename='uploads/' + caso['f_dubitada']) }}" alt="Firma Dubitada" style="width: 250px; height: auto;">
+                            </div>
+                            
+                            
+                        </div>
+                        <div class="col-md-4">
+                            <div class="row">
+                                <b>Firma Indubitada</b>
+                                <br/>
+                                <br/>
+                            </div>
+                            <div class="row">
+                                <img src="{{ url_for('static', filename='uploads/' + caso['f_indubitada']) }}" alt="Firma Dubitada" style="width: 250px; height: auto;">
+                            </div>
+                        </div>
+                    </div>
+                    {% if caso['f_procesada'] %}
+                        <div class="row">
+                            <b>Firma Procesada</b>
+                            <br/>
+                            <br/>
+                            <img src="{{ url_for('static', filename='uploads/' + caso['f_procesada']) }}" alt="Firma Dubitada" style="width: 250px; height: auto;">
+                        </div>
+                    {% endif %}
+                    
+                </div>
+                
+            </div>
+          <!--table id="example1" class="table table-bordered table-striped">
+            <thead>
+            <tr>
+              <th>#</th>
+              <th>Nombre del Caso</th>
+              <th>Departamento</th>
+              <th>Firma Dubitada</th>
+              <th>Firma Indubitada</th>
+              <th>Descripción</th>
+              <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for caso in casos %}
+            <tr>
+              <td style="width:10px;">{{ caso['id_caso'] }}</td>
+              <td>{{ caso['nombre_caso'] }}</td>
+              <td class="text-center">{{ caso['departamento'] }}</td>
+              <td>
+                <img src="{{ url_for('static', filename='uploads/' + caso['f_dubitada']) }}" alt="Firma Dubitada" style="width: 100px; height: auto;">
+              </td>
+              <td>
+                <img src="{{ url_for('static', filename='uploads/' + caso['f_indubitada']) }}" alt="Firma Indubitada" style="width: 100px; height: auto;">
+              </td>              
+              <td>{{ caso['descripcion'] }}</td>
+              <td class="project-actions text-right" style="width:220px;">
+                  <a class="btn btn-primary btn-sm" href="#">
+                      <i class="fas fa-folder"></i>
+                      Ver
+                  </a>
+                  <a class="btn btn-info btn-sm" href="#">
+                      <i class="fas fa-pencil-alt"></i>
+                      Editar
+                  </a>
+                  <a class="btn btn-danger btn-sm" href="#">
+                      <i class="fas fa-trash"></i>
+                      Eliminar
+                  </a>
+              </td>
+          </tr>
+          {% endfor %}
+            </tbody>
+          </table-->
+        </div>
+        <!-- /.card-body -->
+      </div>
+      <!-- /.card -->
+    </section>
+    <!-- /.content -->
+  </div>
+{% endblock %}

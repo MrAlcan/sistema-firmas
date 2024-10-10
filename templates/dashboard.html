@@ -8,7 +8,7 @@
       
         <div class="row mb-1">
           <div class="col-sm-6">
-            <h1 class="m-0">Dashboard</h1>
+            <h1 class="m-0">Ultimos casos</h1>
           </div><!-- /.col -->
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
@@ -20,56 +20,65 @@
       
     </div>
     <!-- /.content-header -->
-
-    <!-- Main content -->
     <section class="content">
-      <div class="container-fluid">
-        <!-- Info boxes -->
-        <div class="row">
-          <div class="col-12 col-sm-6 col-md-6">
-            <div class="info-box">
-              <span class="info-box-icon bg-info elevation-1"><i class="fas fa-list"></i></span>
-
-              <div class="info-box-content">
-                <span class="info-box-text">Casos</span>
-                <span class="info-box-number">
-                  0
-                  <small>registrados</small>
-                </span>
-              </div>
-              <!-- /.info-box-content -->
-            </div>
-            <!-- /.info-box -->
-          </div>
-          <!-- /.col -->
-          
-          <!-- /.col -->
-
-          <!-- fix for small devices only -->
-          <div class="clearfix hidden-md-up"></div>
-
-          <!-- /.col -->
-          <div class="col-12 col-sm-6 col-md-6">
-            <div class="info-box mb-3">
-              <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-users"></i></span>
-
-              <div class="info-box-content">
-                <span class="info-box-text">Usuarios</span>
-                <span class="info-box-number">2</span>
-              </div>
-              <!-- /.info-box-content -->
-            </div>
-            <!-- /.info-box -->
-          </div>
-          <!-- /.col -->
+      <!-- Default box -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Casos Documentología</h3>
         </div>
-        <div>
-          
+        <!-- /.card-header -->
+        <div class="card-body">
+          <table id="example1" class="table table-bordered table-striped">
+            <thead>
+            <tr>
+              <th>#</th>
+              <th>Nombre del Caso</th>
+              <th>Departamento</th>
+              <!--th>Firma Dubitada</th>
+              <th>Firma Indubitada</th-->
+              <th>Descripción</th>
+              <th>Fecha Modificada</th>
+              <th>Acciones</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for caso in casos %}
+            <tr>
+              <td style="width:10px;">{{ caso['id_caso'] }}</td>
+              <td>{{ caso['nombre_caso'] }}</td>
+              <td class="text-center">{{ caso['departamento'] }}</td>
+              <!--td>
+                <img src="{{ url_for('static', filename='uploads/' + caso['f_dubitada']) }}" alt="Firma Dubitada" style="width: 100px; height: auto;">
+              </td>
+              <td>
+                <img src="{{ url_for('static', filename='uploads/' + caso['f_indubitada']) }}" alt="Firma Indubitada" style="width: 100px; height: auto;">
+              </td-->              
+              <td>{{ caso['descripcion'] }}</td>
+              <td>{{ caso['fecha_modificado'] }}</td>
+              <td class="project-actions text-right" style="width:70px;">
+                  <a class="btn btn-primary btn-sm" href="/ver/caso/{{caso['id_caso']}}">
+                      <i class="fas fa-folder"></i>
+                      Ver
+                  </a>
+                  
+              </td>
+          </tr>
+          {% endfor %}
+            </tbody>
+          </table>
         </div>
-
-        
-      </div><!--/. container-fluid -->
+        <!-- /.card-body -->
+      </div>
+      <!-- /.card -->
     </section>
+    <!-- Main content -->
+    
+
+
+
+
+
+
     <!-- /.content -->
   </div>
 {% endblock%}

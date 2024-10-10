@@ -131,7 +131,7 @@
                                 <input type="file" class="form-control-file" name="imagen">
                                 <input type="hidden" name="imagen_actual" value="{{ usuario['imagen'] }}">
                                 {% set imagen_usuario = usuario['imagen'] if usuario['imagen'] else 'default.png' %}
-                                <img src="{{ url_for('static', filename='Users_Profile/' + imagen_usuario) }}" class="img-thumbnail mt-2" alt="Imagen actual" style="width: 150px;">
+                                <img src="{{ url_for('static', filename='Users_Profile/perfil_usuarios/' + imagen_usuario) }}" class="img-thumbnail mt-2" alt="Imagen actual" style="width: 150px;">
                               </div>
                             </div>
                           </div>
