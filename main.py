@@ -559,12 +559,12 @@ def comparar():
     return render_template('comparar.html', casos=casos)
 
 
+
 @app.route('/predict_comparar', methods=['POST'])
 def predict_comparar():
     file_dubitada = request.files.get('imageDoubtful')
     file_indubitable = request.files.get('imageIndubitable')
-    imagen1=file_dubitada
-    imagen2=file_indubitable
+
     if not file_dubitada or not file_indubitable:
         return '<p>No se subieron ambos archivos (dubitada e indubitable).</p>', 400
 
@@ -572,12 +572,12 @@ def predict_comparar():
         basepath = os.path.dirname(__file__)
         dubitada_path = os.path.join(basepath, 'uploads', secure_filename(file_dubitada.filename))
         indubitable_path = os.path.join(basepath, 'uploads', secure_filename(file_indubitable.filename))
-        print("0000000000000000000")
-        print(imagen1)
-        print(imagen2)
+        
+        # Guardar las imágenes en el sistema
         file_dubitada.save(dubitada_path)
         file_indubitable.save(indubitable_path)
-        print(f'Ruta de la imagen dubitada: {dubitada_path}')
+
+        # Ejecutar el modelo YOLO
         yolo_weights = 'best.pt'  # Ruta al modelo YOLOv7 entrenado
         process = subprocess.Popen(["python", "yolo/detect.py", '--source', dubitada_path, "--weights", yolo_weights], shell=True)
         process.wait()  # Esperar a que el proceso termine
@@ -593,11 +593,12 @@ def predict_comparar():
             return "Error: No se encontraron subcarpetas en runs/detect.", 500
 
         latest_subfolder = max(subfolders, key=lambda x: os.path.getctime(os.path.join(folder_path, x)))
-        yolo_image_path = os.path.join(folder_path, latest_subfolder, file_dubitada.filename)
-        print(f'Ruta de la imagen procesada por YOLO: {yolo_image_path}')
+        yolo_image_path = os.path.join(folder_path, latest_subfolder, secure_filename(file_dubitada.filename))
+        
         if not os.path.exists(yolo_image_path):
             return f"Error: La imagen procesada por YOLO no se encontró en {yolo_image_path}.", 500
 
+        # Leer y procesar las imágenes
         img_dubitada = cv2.imread(dubitada_path)
         img_dubitada = cv2.resize(img_dubitada, (224, 224))
         img_dubitada = img_dubitada / 255.0
@@ -607,12 +608,14 @@ def predict_comparar():
         img_indubitable = cv2.resize(img_indubitable, (224, 224))
         img_indubitable = img_indubitable / 255.0
         img_indubitable = np.expand_dims(img_indubitable, axis=0)
+
+        # Predecir similitud
         prediction_dubitada = model.predict(img_dubitada)
         prediction_indubitable = model.predict(img_indubitable)
-
         similarity_score = 1 - np.abs(prediction_dubitada - prediction_indubitable)
         similarity_score_value = similarity_score[0][0]
 
+        # Determinar el resultado
         threshold = 0.5  
         if similarity_score_value >= threshold:
             result = 'LA FIRMA ES GENUINA'
@@ -620,8 +623,15 @@ def predict_comparar():
             result = 'LA FIRMA ES FALSA'
 
         percentage = similarity_score_value * 100
-        yolo_image_path = yolo_image_path.replace('\\', '/')
-        return render_template('comparar.html', result=result, percentage=percentage, yolo_image=yolo_image_path,labels_resultados=labels_resultados,imagen1=dubitada_path,imagen2=indubitable_path)
+        yolo_image_path = yolo_image_path.replace('\\', '/')  # Normalizar la ruta
+
+        # Usar url_for para las imágenes
+        url_dubitada = url_for('static', filename='uploads/' + secure_filename(file_dubitada.filename))
+        url_indubitable = url_for('static', filename='uploads/' + secure_filename(file_indubitable.filename))
+
+        return render_template('comparar.html', result=result, percentage=percentage, 
+                               yolo_image=yolo_image_path, labels_resultados=labels_resultados, 
+                               imagen1=url_dubitada, imagen2=url_indubitable)
 
     except Exception as e:
         return f'<p>Error al procesar las imágenes: {str(e)}</p>', 500
@@ -743,6 +753,8 @@ def predict():
         
       
         yolo_image_path = yolo_image_path.replace('\\', '/')
+
+        
         
         # Renderizar el template HTML con el mensaje y la imagen de YOLOv7
         return render_template('spocometria.html', result=result, percentage=percentage, yolo_image=yolo_image_path,casos=casos,labels_resultados=labels_resultados,imagen1=imagen1,imagen2=imagen2,casoid=casoid)

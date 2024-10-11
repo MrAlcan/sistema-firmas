@@ -3,58 +3,58 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 <div class="content-wrapper">
     <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>Comparar Firmas</h1>
-          </div>
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Comparar Firmas</h1>
+                </div>
+            </div>
         </div>
-      </div>
     </section>
 
     <section class="content">
         <div class="container-fluid">
-          <div class="row justify-content-center">
-            <div class="col-md-12">
-              <div class="card">
-                <div class="card-header">
-                  <h3 class="card-title">Sube las imágenes de las firmas para verificación</h3>
-                </div>
-                <div class="card-body">
-                  <form id="signatureForm" action="/predict_comparar" method="post" enctype="multipart/form-data">
-                      <div class="row">
-                        <div class="col-md-6 d-flex justify-content-center align-items-center flex-column">
-                            <label for="imageDoubtful" class="fw-bold">Firma Dubitada</label><br>
-                            <input type="file" name="imageDoubtful" id="imageDoubtful" required onchange="previewImage('imageDoubtful', 'canvasDoubtful');">
-                            <canvas id="canvasDoubtful" width="500" height="400" style="border: 1px solid #000; margin-top: 10px;"></canvas>
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Sube las imágenes de las firmas para verificación</h3>
                         </div>
-                        <div class="col-md-6 d-flex justify-content-center align-items-center flex-column">
-                            <label for="imageIndubitable" class="fw-bold">Firma Indubitada</label><br>
-                            <input type="file" name="imageIndubitable" id="imageIndubitable" required onchange="previewImage('imageIndubitable', 'canvasIndubitable');">
-                            <canvas id="canvasIndubitable" width="500" height="400" style="border: 1px solid #000; margin-top: 10px;"></canvas>
-                        </div>
-                      </div>
-                      <div class="modal-footer justify-content-center">
-                        <button type="submit" class="btn btn-primary btn-flat"><i class="fa fa-check"></i> Verificar</button>
-                        <button type="button" class="btn btn-danger btn-flat" onclick="clearResults()"><i class="fa fa-eraser"></i> Limpiar</button>
-                      </div>
-                  </form>
+                        <div class="card-body">
+                            <form id="signatureForm" action="/predict_comparar" method="post" enctype="multipart/form-data">
+                                <div class="row">
+                                    <div class="col-md-6 d-flex justify-content-center align-items-center flex-column">
+                                        <label for="imageDoubtful" class="fw-bold">Firma Dubitada</label><br>
+                                        <input type="file" name="imageDoubtful" id="imageDoubtful" required onchange="previewImage('imageDoubtful', 'canvasDoubtful');">
+                                        <canvas id="canvasDoubtful" width="550" height="400" style="border: 1px solid #000; margin-top: 10px;"></canvas>
+                                    </div>
+                                    <div class="col-md-6 d-flex justify-content-center align-items-center flex-column">
+                                        <label for="imageIndubitable" class="fw-bold">Firma Indubitada</label><br>
+                                        <input type="file" name="imageIndubitable" id="imageIndubitable" required onchange="previewImage('imageIndubitable', 'canvasIndubitable');">
+                                        <canvas id="canvasIndubitable" width="550" height="400" style="border: 1px solid #000; margin-top: 10px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="modal-footer justify-content-center">
+                                    <button type="submit" class="btn btn-primary btn-flat"><i class="fa fa-check"></i> Verificar</button>
+                                    <button type="button" class="btn btn-danger btn-flat" onclick="clearResults()"><i class="fa fa-eraser"></i> Limpiar</button>
+                                </div>
+                            </form>
 
-                  <div id="spinner" class="spinner-overlay" style="display: none;">
-                    <div class="spinner">
-                        <span class="loader"></span>
+                            <div id="spinner" class="spinner-overlay" style="display: none;">
+                                <div class="spinner">
+                                    <span class="loader"></span>
+                                </div>
+                            </div>
+
+                            {% if result %}
+                            <div class="alert alert-info mt-3">
+                                <p><strong>{{ result }} con un porcentaje de {{ percentage }}%</strong></p>
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
-                  </div>
-
-                  {% if result %}
-                  <div class="alert alert-info mt-3">
-                    <p><strong>{{ result }} con un porcentaje de {{ percentage }}%</strong></p>
-                  </div>
-                  {% endif %}
                 </div>
-              </div>
             </div>
-          </div>
         </div>
     </section>
 
@@ -69,26 +69,26 @@
                         </div>
                         <div class="card-body">
                             <form action='/guardar' method="POST" enctype="multipart/form-data">
-                            {% if yolo_image %}
-                            <div class="row mt-3">
-                                <input type="hidden" id="detalles" name="detalles" class="form-control" value="{{ labels_resultados }}">
-                                <input type="hidden" id="casoids" name="casoids" class="form-control" value="{{ casoid }}">
-                                <input type="hidden" id="imageResultado" name="imageResultado" class="form-control" value="{{ yolo_image }}">
-                                <div class="col-md-3">
-                                    <h4>Detalles</h4>
-                                    <ul>
-                                        {% for label in labels_resultados %}
-                                        <li>{{ label }}</li>
-                                        {% endfor %}
-                                    </ul>
+                                {% if yolo_image %}
+                                <div class="row mt-3">
+                                    <input type="hidden" id="detalles" name="detalles" class="form-control" value="{{ labels_resultados }}">
+                                    <input type="hidden" id="casoids" name="casoids" class="form-control" value="{{ casoid }}">
+                                    <input type="hidden" id="imageResultado" name="imageResultado" class="form-control" value="{{ yolo_image }}">
+                                    <div class="col-md-3">
+                                        <h4>Detalles</h4>
+                                        <ul>
+                                            {% for label in labels_resultados %}
+                                            <li>{{ label }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-9 text-center">
+                                        <h4>Resultado en la Firma Dubitada</h4>
+                                        <img src="{{ url_for('show_yolo_image', filename=yolo_image.split('/')[-1]) }}" alt="Resultado YOLO" style="height: 300px;">
+                                    </div>
                                 </div>
-                                <div class="col-md-9 text-center">
-                                    <h4>Resultado en la Firma Dubitada</h4>
-                                    <img src="{{ url_for('show_yolo_image', filename=yolo_image.split('/')[-1]) }}" alt="Resultado YOLO" style="height: 300px;">
-                                </div>
-                            </div>
-                            {% endif %}
-                        </form>
+                                {% endif %}
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -122,7 +122,7 @@ function previewImage(inputId, canvasId) {
     reader.readAsDataURL(file);
 }
 
-// Función para cargar imágenes de los archivos subidos al cargar la página
+// Función para cargar imágenes de las rutas al cargar la página
 window.onload = function() {
     var canvasDoubtful = document.getElementById('canvasDoubtful');
     var ctxDoubtful = canvasDoubtful.getContext('2d');
@@ -130,7 +130,8 @@ window.onload = function() {
     var canvasIndubitable = document.getElementById('canvasIndubitable');
     var ctxIndubitable = canvasIndubitable.getContext('2d');
     
-    if ('{{ imagen1 }}') {
+    // Cargar imagen de la firma dudosa si está disponible
+    if ('{{ imagen1 }}' != '') {
         var imgDoubtful = new Image();
         imgDoubtful.src = "{{ imagen1 }}";
         imgDoubtful.onload = function() {
@@ -139,7 +140,8 @@ window.onload = function() {
         }
     }
     
-    if ('{{ imagen2 }}') {
+    // Cargar imagen de la firma indubitada si está disponible
+    if ('{{ imagen2 }}' != '') {
         var imgIndubitable = new Image();
         imgIndubitable.src = "{{ imagen2 }}";
         imgIndubitable.onload = function() {
@@ -151,7 +153,7 @@ window.onload = function() {
 
 document.getElementById('signatureForm').addEventListener('submit', function() {
     document.getElementById('spinner').style.display = 'flex'; 
-  });
+});
 
 function clearResults() {
     var canvasDoubtful = document.getElementById('canvasDoubtful');
@@ -169,6 +171,7 @@ function clearResults() {
     if (alertBox) {
         alertBox.remove();
     }
+    document.getElementById("resultSection").style.display = 'none';
 }
 </script>
 {% endblock %}
