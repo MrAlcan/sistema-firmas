@@ -1,0 +1,310 @@
+{% extends 'layout.html' %}
+{% block body %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+<div class="content-wrapper">
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Verificación de la Firma</h1>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Listado de Firmas Verificadas</h3>
+                        </div>
+                        <div class="card-body">
+                            <form action='/filtrar' method="POST" enctype="multipart/form-data">
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label for="departamento">Departamento</label>
+                                    <select id="departamento" name="departamento" class="form-control">
+                                        <option value="">Selecciona un departamento</option>
+                                        <option value="La Paz">La Paz</option>
+                                        <option value="Oruro">Oruro</option>
+                                        <option value="Potosi">Potosi</option>
+                                        <option value="Cochabamba">Cochabamba</option>
+                                        <option value="Chuquisaca">Chuquisaca</option>
+                                        <option value="Tarija">Tarija</option>
+                                        <option value="Santa Cruz">Santa Cruz</option>
+                                        <option value="Beni">Beni</option>
+                                        <option value="Pando">Pando</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="fecha_inicio">Fecha de inicio</label>
+                                    <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="fecha_final">Fecha final</label>
+                                    <input type="date" id="fecha_final" name="fecha_fin" class="form-control">
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary w-100"><i class="fa fa-search"></i> Buscar</button>
+                                </div>
+                            </div>
+                        </form>
+                            
+                            <table id="example2" class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nombre del Caso</th>
+                                        <th>Departamento</th>
+                                        <th>Firma Dubitada</th>
+                                        <th>Firma Indubitada</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for caso in casos %}
+                                    <tr>
+                                        <td style="width:10px;">{{ caso['id_caso'] }}</td>
+                                        <td>{{ caso['nombre_caso'] }}</td>
+                                        <td class="text-center">{{ caso['departamento'] }}</td>
+                                        <td class="text-center">
+                                            <img src="{{ url_for('static', filename='uploads/' + caso['f_dubitada']) }}" alt="Firma Dubitada" style="height: 100px;">
+                                        </td>
+                                        <td class="text-center">
+                                            <img src="{{ url_for('static', filename='uploads/' + caso['f_indubitada']) }}" alt="Firma Indubitada" style="height: 100px;">
+                                        </td>
+                                        <td class="project-actions text-center">
+                                            <button type="button" class="btn btn-info btn-sm" 
+                                                    onclick="showImages('{{ url_for('static', filename='uploads/' + caso['f_dubitada']) }}', 
+                                                                        '{{ url_for('static', filename='uploads/' + caso['f_indubitada']) }}',
+                                                                        '{{ caso['id_caso'] }}');">
+                                                <i class="fas fa-eye"></i> Ver
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Imagenes para Verificar</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="signatureForm" action="/predict" method="post" enctype="multipart/form-data">
+                                <div class="row justify-content-center">
+                                    <div class="col-md-5 text-center">
+                                        <label for="imageDoubtful">Firma Dubitada</label><br>
+                                        <input type="hidden" name="imageDoubtful" id="imageDoubtful" required>
+                                        <canvas id="canvasDoubtful" style="display: block; border: 1px solid #000; max-width: 100%; max-height: 300px;"></canvas>
+                                    </div>
+                                    <div class="col-md-5 text-center">
+                                        <label for="imageIndubitable">Firma Indubitada</label><br>
+                                        <input type="hidden" name="imageIndubitable" id="imageIndubitable" required>
+                                        <input type="hidden" id="casoid" name="casoid" class="form-control" required>
+                                        <canvas id="canvasIndubitable" style="display: block; border: 1px solid #000; max-width: 100%; max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                                <div class="modal-footer justify-content-center">
+                                    <button type="submit" class="btn btn-primary btn-flat"><i class="fa fa-check"></i>  Verificar</button>
+                                    
+                                    <button type="button" class="btn btn-danger btn-flat" onclick="clearResults()"><i class="fa fa-eraser"></i>  Limpiar</button>
+                                    
+                                </div>
+                            </form>
+                            <div id="spinner" class="spinner-overlay">
+                                <div class="spinner">
+                                    <span class="loader"></span>
+                                </div>
+                            </div>
+                            
+    
+                            {% if result %}
+                            <div class="alert alert-info mt-3">
+                                <p><strong>{{ result }} con un porcentaje de {{ percentage }}%</strong></p>
+                            </div>
+                            {% endif %}
+    
+                           
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    {% if result %}
+    <section class="content" id="resultSection">
+        <div class="container-fluid">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Resultados Encontrados</h3>
+                        </div>
+                        <div class="card-body">
+                            <form action='/guardar' method="POST" enctype="multipart/form-data">
+                            {% if yolo_image %}
+                            <div class="row mt-3">
+                                <input type="hidden" id="detalles" name="detalles" class="form-control" value="{{ labels_resultados }}">
+                                <input type="hidden" id="casoids" name="casoids" class="form-control" value="{{ casoid }}">
+                                <input type="hidden" id="imageResultado" name="imageResultado" class="form-control" value="{{ yolo_image }}">
+                                <div class="col-md-3">
+                                    <h4>Detalles</h4>
+                                    <ul>
+                                        {% for label in labels_resultados %}
+                                        <li>{{ label }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <div class="col-md-9 text-center">
+                                    <h4>Resultado en la Firma Dubitada</h4>
+                                    <img src="{{ url_for('show_yolo_image', filename=yolo_image.split('/')[-1]) }}" alt="Resultado YOLO" style="height: 300px;">
+                                </div>
+                            </div>
+                            {% endif %}
+                            <div class="modal-footer justify-content-center">
+                                <button type="button" class="btn btn-warning btn-flat" onclick="clearResults()"><i class="fa fa-image"></i>  Cambiar Imagenes</button>
+                                <button type="submit" class="btn btn-secondary btn-flat"><i class="fa fa-save"></i>  Guardar Resultados</button>
+                            </div>
+                        </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+<script>
+    function initializeCanvas(canvasId) {
+      var canvas = document.getElementById(canvasId);
+      var ctx = canvas.getContext('2d');
+      canvas.width = 500;
+      canvas.height = 300;
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#000';
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function previewImage(inputId, canvasId) {
+      var file = document.getElementById(inputId).files[0];
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var canvas = document.getElementById(canvasId);
+        var ctx = canvas.getContext('2d');
+        var img = new Image();
+
+        img.onload = function() {
+          var canvasAspect = canvas.width / canvas.height;
+          var imgAspect = img.width / img.height;
+          var drawWidth, drawHeight;
+
+          if (imgAspect > canvasAspect) {
+            drawWidth = canvas.width;
+            drawHeight = drawWidth / imgAspect;
+          } else {
+            drawHeight = canvas.height;
+            drawWidth = drawHeight * imgAspect;
+          }
+
+          var x = (canvas.width - drawWidth) / 2;
+          var y = (canvas.height - drawHeight) / 2;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, x, y, drawWidth, drawHeight);
+        }
+
+        img.src = e.target.result;
+      }
+      reader.readAsDataURL(file);
+    }
+
+    function loadImages(imagen1, imagen2) {
+      if (imagen1) {
+        var canvasDoubtful = document.getElementById('canvasDoubtful');
+        var ctxDoubtful = canvasDoubtful.getContext('2d');
+        var imgDoubtful = new Image();
+        imgDoubtful.onload = function() {
+          ctxDoubtful.clearRect(0, 0, canvasDoubtful.width, canvasDoubtful.height);
+          ctxDoubtful.drawImage(imgDoubtful, 0, 0, canvasDoubtful.width, canvasDoubtful.height);
+        }
+        imgDoubtful.src = imagen1; 
+      }
+
+      if (imagen2) {
+        var canvasIndubitable = document.getElementById('canvasIndubitable');
+        var ctxIndubitable = canvasIndubitable.getContext('2d');
+        var imgIndubitable = new Image();
+        imgIndubitable.onload = function() {
+          ctxIndubitable.clearRect(0, 0, canvasIndubitable.width, canvasIndubitable.height);
+          ctxIndubitable.drawImage(imgIndubitable, 0, 0, canvasIndubitable.width, canvasIndubitable.height);
+        }
+        imgIndubitable.src = imagen2; 
+      }
+    }
+    
+    function showImages(dubitadaUrl, indubitadaUrl, casoId) {
+      
+      document.getElementById('imageDoubtful').value = dubitadaUrl;
+      document.getElementById('imageIndubitable').value = indubitadaUrl;
+      loadImages(dubitadaUrl, indubitadaUrl); 
+      document.getElementById('casoid').value = casoId;
+      
+    }
+
+    document.getElementById('signatureForm').addEventListener('submit', function() {
+        document.getElementById('spinner').style.display = 'flex'; 
+    });
+
+    function clearResults() {
+        var canvasDoubtful = document.getElementById('canvasDoubtful');
+        var ctxDoubtful = canvasDoubtful.getContext('2d');
+        ctxDoubtful.clearRect(0, 0, canvasDoubtful.width, canvasDoubtful.height);
+        var canvasIndubitable = document.getElementById('canvasIndubitable');
+        var ctxIndubitable = canvasIndubitable.getContext('2d');
+        ctxIndubitable.clearRect(0, 0, canvasIndubitable.width, canvasIndubitable.height);
+        document.getElementById('imageDoubtful').value = '';
+        document.getElementById('imageIndubitable').value = '';
+        var alertBox = document.querySelector('.alert-info');
+        if (alertBox) {
+            alertBox.remove();
+        }
+        var yoloImage = document.querySelector('img[alt="Resultado YOLO"]');
+        if (yoloImage) {
+            yoloImage.remove();
+        }
+        document.getElementById("resultSection").style.display = 'none';
+
+       
+    }
+
+    window.onload = function() {
+      initializeCanvas('canvasDoubtful');
+      initializeCanvas('canvasIndubitable');
+      var imagen1 = "{{ imagen1 }}"; 
+      var imagen2 = "{{ imagen2 }}"; 
+      
+      loadImages(imagen1, imagen2); 
+    }
+    
+</script>
+
+
+{% endblock %}

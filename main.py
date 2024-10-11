@@ -13,6 +13,7 @@ import shutil
 import json
 import base64
 import random
+from datetime import datetime
 """ from pymysql.cursors import DictCursor  # Importación adicional necesaria """
 
 def generar_codigo():
@@ -484,6 +485,147 @@ def listar_casos():
     casos = cur.fetchall()
     return render_template('list_casos.html', casos=casos)
 
+
+@app.route('/filtrar', methods=['POST'])
+def filtrar_casos():
+    departamento = request.form.get('departamento')
+    fecha_inicio = request.form.get('fecha_inicio')
+    fecha_final = request.form.get('fecha_fin')
+    print("_____+++++++++")
+    print(fecha_inicio)
+    print(fecha_final)
+    query = "SELECT * FROM caso WHERE activo = 1"
+    
+    filtros = []
+
+    if departamento:
+        filtros.append(f"departamento = '{departamento}'")
+    if fecha_inicio:
+        filtros.append(f"fecha >= '{fecha_inicio}'")
+    if fecha_final:
+        filtros.append(f"fecha <= '{fecha_final}'")
+
+    if filtros:
+        query += " AND " + " AND ".join(filtros)
+
+    cur = mySQL.connection.cursor()
+    cur.execute(query)
+    casos = cur.fetchall()
+
+    return render_template('spocometria.html', casos=casos)
+
+
+
+
+@app.route('/guardar', methods=['POST'])
+def guardar_datos():
+    detalle = request.form.get('detalles')
+    casoid = request.form.get('casoids')
+    imagen_ruta = request.form.get('imageResultado').strip()  
+    
+    ahora = datetime.now()
+    fecha_hora = ahora.strftime("%Y%m%d_%H%M%S")  
+    carpeta_nombre = f"{casoid}_{fecha_hora}"
+    carpeta_path = os.path.join('resultados_firmas', carpeta_nombre)
+    
+    os.makedirs(carpeta_path, exist_ok=True)
+    
+ 
+    imagen_filename = os.path.basename(imagen_ruta)
+    ruta_imagen = os.path.join(carpeta_path, imagen_filename)
+
+ 
+    os.rename(imagen_ruta, ruta_imagen) 
+
+    cur = mySQL.connection.cursor()
+    query = "INSERT INTO resultados (ruta_imagen, detalle, caso, activo) VALUES (%s, %s, %s, %s)"
+    cur.execute(query, (ruta_imagen, detalle, casoid, 1))  
+    mySQL.connection.commit()
+    cur.close()
+    
+    query = "SELECT * FROM caso WHERE activo = 1"
+    cur = mySQL.connection.cursor()
+    cur.execute(query)
+    casos = cur.fetchall()
+    cur.close()
+
+    return render_template('spocometria.html', casos=casos, modal=1)
+
+@app.route('/comparar')
+def comparar():
+    cur = mySQL.connection.cursor()
+    cur.execute("SELECT * FROM caso WHERE activo = 1")
+    casos = cur.fetchall()
+    return render_template('comparar.html', casos=casos)
+
+
+@app.route('/predict_comparar', methods=['POST'])
+def predict_comparar():
+    file_dubitada = request.files.get('imageDoubtful')
+    file_indubitable = request.files.get('imageIndubitable')
+    imagen1=file_dubitada
+    imagen2=file_indubitable
+    if not file_dubitada or not file_indubitable:
+        return '<p>No se subieron ambos archivos (dubitada e indubitable).</p>', 400
+
+    try:
+        basepath = os.path.dirname(__file__)
+        dubitada_path = os.path.join(basepath, 'uploads', secure_filename(file_dubitada.filename))
+        indubitable_path = os.path.join(basepath, 'uploads', secure_filename(file_indubitable.filename))
+        print("0000000000000000000")
+        print(imagen1)
+        print(imagen2)
+        file_dubitada.save(dubitada_path)
+        file_indubitable.save(indubitable_path)
+        print(f'Ruta de la imagen dubitada: {dubitada_path}')
+        yolo_weights = 'best.pt'  # Ruta al modelo YOLOv7 entrenado
+        process = subprocess.Popen(["python", "yolo/detect.py", '--source', dubitada_path, "--weights", yolo_weights], shell=True)
+        process.wait()  # Esperar a que el proceso termine
+        
+        labels_resultados = []
+        with open('labels_resultados.txt', 'r') as f:
+            labels_resultados = [line.strip() for line in f.readlines()]
+
+        folder_path = 'runs/detect'
+        subfolders = [f for f in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, f))]
+        
+        if not subfolders:
+            return "Error: No se encontraron subcarpetas en runs/detect.", 500
+
+        latest_subfolder = max(subfolders, key=lambda x: os.path.getctime(os.path.join(folder_path, x)))
+        yolo_image_path = os.path.join(folder_path, latest_subfolder, file_dubitada.filename)
+        print(f'Ruta de la imagen procesada por YOLO: {yolo_image_path}')
+        if not os.path.exists(yolo_image_path):
+            return f"Error: La imagen procesada por YOLO no se encontró en {yolo_image_path}.", 500
+
+        img_dubitada = cv2.imread(dubitada_path)
+        img_dubitada = cv2.resize(img_dubitada, (224, 224))
+        img_dubitada = img_dubitada / 255.0
+        img_dubitada = np.expand_dims(img_dubitada, axis=0)
+
+        img_indubitable = cv2.imread(indubitable_path)
+        img_indubitable = cv2.resize(img_indubitable, (224, 224))
+        img_indubitable = img_indubitable / 255.0
+        img_indubitable = np.expand_dims(img_indubitable, axis=0)
+        prediction_dubitada = model.predict(img_dubitada)
+        prediction_indubitable = model.predict(img_indubitable)
+
+        similarity_score = 1 - np.abs(prediction_dubitada - prediction_indubitable)
+        similarity_score_value = similarity_score[0][0]
+
+        threshold = 0.5  
+        if similarity_score_value >= threshold:
+            result = 'LA FIRMA ES GENUINA'
+        else:
+            result = 'LA FIRMA ES FALSA'
+
+        percentage = similarity_score_value * 100
+        yolo_image_path = yolo_image_path.replace('\\', '/')
+        return render_template('comparar.html', result=result, percentage=percentage, yolo_image=yolo_image_path,labels_resultados=labels_resultados,imagen1=dubitada_path,imagen2=indubitable_path)
+
+    except Exception as e:
+        return f'<p>Error al procesar las imágenes: {str(e)}</p>', 500
+
 # CREACION DE CASOS Y LISTADO DE CASOSO (FIN)
 
 # Rutas para la aplicación
@@ -493,7 +635,10 @@ def signature_verification():
 
 @app.route('/firmas')
 def signatures():
-    return render_template('/firmas.html')
+    cur = mySQL.connection.cursor()
+    cur.execute("SELECT * FROM caso WHERE activo = 1")
+    casos = cur.fetchall()
+    return render_template('spocometria.html', casos=casos)
 
 """ @app.route('/listar_casos_c')
 def listar_casos_c():
@@ -503,29 +648,42 @@ def listar_casos_c():
     return render_template('firmas.html', firmas=firmas) """
 
 
+
+
 @app.route('/predict', methods=['POST'])
 def predict():
-    file_dubitada = request.files.get('imageDoubtful')
-    file_indubitable = request.files.get('imageIndubitable')
+    image_doubtful_path = request.form.get('imageDoubtful')
+    image_indubitable_path = request.form.get('imageIndubitable')
+    casoid = request.form.get('casoid')
+    print("_____+++++++++_________sasasa")
+    print(image_doubtful_path)
+    print(image_indubitable_path)
+    print(casoid)
+    imagen1=image_doubtful_path
+    imagen2=image_indubitable_path
+    basepath = os.path.dirname(__file__)
+    image_doubtful_path = os.path.join(basepath, image_doubtful_path.lstrip('/'))
+    image_indubitable_path = os.path.join(basepath, image_indubitable_path.lstrip('/'))
+    print(f'total {image_doubtful_path}')
+    print(f'total2 {image_indubitable_path}')
 
-    if not file_dubitada or not file_indubitable:
+    if not image_doubtful_path or not image_indubitable_path:
         return '<p>No se subieron ambos archivos (dubitada e indubitable).</p>', 400
 
     try:
-        # Guardar las imágenes cargadas
-        basepath = os.path.dirname(__file__)
-        dubitada_path = os.path.join(basepath, 'uploads', secure_filename(file_dubitada.filename))
-        indubitable_path = os.path.join(basepath, 'uploads', secure_filename(file_indubitable.filename))
-        file_dubitada.save(dubitada_path)
-        file_indubitable.save(indubitable_path)
+        if not os.path.exists(image_doubtful_path) or not os.path.exists(image_indubitable_path):
+            return '<p>Una o ambas imágenes no se encontraron en las rutas proporcionadas.</p>', 404
 
-        # Comprobar la ruta de la imagen guardada
-        print(f'Ruta de la imagen dubitada: {dubitada_path}')
-        
         # Ejecutar YOLOv7 para detectar características en la firma dubitada
         yolo_weights = 'best.pt'  # Ruta al modelo YOLOv7 entrenado
-        process = subprocess.Popen(["python", "yolo/detect.py", '--source', dubitada_path, "--weights", yolo_weights], shell=True)
+        process = subprocess.Popen(["python", "yolo/detect.py", '--source', image_doubtful_path, "--weights", yolo_weights], shell=True)
         process.wait()  # Esperar a que el proceso termine
+        labels_resultados = []
+        with open('labels_resultados.txt', 'r') as f:
+            labels_resultados = [line.strip() for line in f.readlines()]
+
+        print("_____________________")
+        print(labels_resultados)
         
         # Verificar si YOLO ejecutó correctamente
         print("YOLO ejecutado correctamente, esperando resultados.")
@@ -538,30 +696,37 @@ def predict():
             return "Error: No se encontraron subcarpetas en runs/detect.", 500
 
         latest_subfolder = max(subfolders, key=lambda x: os.path.getctime(os.path.join(folder_path, x)))
-        yolo_image_path = os.path.join(folder_path, latest_subfolder, file_dubitada.filename)
+        yolo_image_path = os.path.join(folder_path, latest_subfolder, os.path.basename(image_doubtful_path))
 
+
+        
         # Verifica si la imagen procesada existe
         print(f'Ruta de la imagen procesada por YOLO: {yolo_image_path}')
         if not os.path.exists(yolo_image_path):
             return f"Error: La imagen procesada por YOLO no se encontró en {yolo_image_path}.", 500
 
         # Procesamiento adicional de las firmas con el modelo de verificación de firmas
-        img_dubitada = cv2.imread(dubitada_path)
-        img_dubitada = cv2.resize(img_dubitada, (224, 224))
-        img_dubitada = img_dubitada / 255.0
-        img_dubitada = np.expand_dims(img_dubitada, axis=0)
+        img_doubtful = cv2.imread(image_doubtful_path)
+        img_doubtful = cv2.resize(img_doubtful, (224, 224))
+        img_doubtful = img_doubtful / 255.0
+        img_doubtful = np.expand_dims(img_doubtful, axis=0)
 
-        img_indubitable = cv2.imread(indubitable_path)
+        img_indubitable = cv2.imread(image_indubitable_path)
         img_indubitable = cv2.resize(img_indubitable, (224, 224))
         img_indubitable = img_indubitable / 255.0
         img_indubitable = np.expand_dims(img_indubitable, axis=0)
 
         # Realizar predicciones con el modelo de verificación de firmas
-        prediction_dubitada = model.predict(img_dubitada)
+        prediction_doubtful = model.predict(img_doubtful)
         prediction_indubitable = model.predict(img_indubitable)
 
+        print("predicciones")
+        print(prediction_doubtful)
+        print(prediction_indubitable)
+
+
         # Comparación de resultados entre ambas predicciones
-        similarity_score = 1 - np.abs(prediction_dubitada - prediction_indubitable)
+        similarity_score = 1 - np.abs(prediction_doubtful - prediction_indubitable)
         similarity_score_value = similarity_score[0][0]
 
         threshold = 0.5  # Umbral para definir la autenticidad
@@ -571,12 +736,21 @@ def predict():
             result = 'LA FIRMA ES FALSA'
 
         percentage = similarity_score_value * 100
+
+        cur = mySQL.connection.cursor()
+        cur.execute("SELECT * FROM caso WHERE activo = 1")
+        casos = cur.fetchall()
+        
+      
+        yolo_image_path = yolo_image_path.replace('\\', '/')
         
         # Renderizar el template HTML con el mensaje y la imagen de YOLOv7
-        return render_template('firmas.html', result=result, percentage=percentage, yolo_image=yolo_image_path)
+        return render_template('spocometria.html', result=result, percentage=percentage, yolo_image=yolo_image_path,casos=casos,labels_resultados=labels_resultados,imagen1=imagen1,imagen2=imagen2,casoid=casoid)
 
     except Exception as e:
         return f'<p>Error al procesar las imágenes: {str(e)}</p>', 500
+
+
 
 # Ruta para servir la imagen procesada por YOLOv7
 @app.route('/show_yolo_image/<filename>')
