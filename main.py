@@ -108,10 +108,14 @@ def allowed_file(filename):
 
 @app.route('/')
 def home():
+    if 'id_usuario' in session:
+        return redirect(url_for('dashboard'))
     return render_template('login.html')
 
 @app.route('/dashboard')
 def dashboard():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     conexion = mySQL.connection
     cur = conexion.cursor()
 
@@ -125,6 +129,8 @@ def dashboard():
 
 @app.route('/acceso-login', methods=['GET', 'POST'])
 def login():
+    if 'id_usuario' in session:
+        return redirect(url_for('dashboard'))
     if request.method == 'POST':
         _user = request.form['user']
         _password = request.form['password']
@@ -244,6 +250,8 @@ def logout():
 
 @app.route('/usuarios')
 def usuarios():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     conexion = mySQL.connection
     cur = conexion.cursor()
 
@@ -256,6 +264,7 @@ def usuarios():
 
 @app.route('/new_user', methods=['POST'])
 def new_user():
+    
     if request.method == 'POST':
         # Capturando los datos enviados desde el formulario
         nombre = request.form['Nombre'].lower().strip()
@@ -427,6 +436,8 @@ def delete_user(id):
 
 @app.route('/nuevo_caso', methods=['GET', 'POST'])
 def new_case():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     if request.method == 'POST':
         # Verifica si el usuario está logueado
         if 'id_usuario' not in session:
@@ -480,6 +491,8 @@ def new_case():
 
 @app.route('/listar_casos')
 def listar_casos():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     cur = mySQL.connection.cursor()
     cur.execute("SELECT * FROM caso WHERE activo = 1")
     casos = cur.fetchall()
@@ -553,6 +566,8 @@ def guardar_datos():
 
 @app.route('/comparar')
 def comparar():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     cur = mySQL.connection.cursor()
     cur.execute("SELECT * FROM caso WHERE activo = 1")
     casos = cur.fetchall()
@@ -635,6 +650,8 @@ def signature_verification():
 
 @app.route('/firmas')
 def signatures():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     cur = mySQL.connection.cursor()
     cur.execute("SELECT * FROM caso WHERE activo = 1")
     casos = cur.fetchall()
@@ -775,17 +792,58 @@ def show_yolo_image(filename):
     except Exception as e:
         return f"Error al buscar la imagen procesada: {str(e)}", 500
 
+@app.route('/mostrar_imagen_procesada/<ruta_c>/<filename>')
+def mostrar_imagen_procesada(ruta_c, filename):
+    yolo_output_dir = 'resultados_firmas'
+    print('-'*100)
+    print('entro a la ruta pa mostrar imagen')
+    
+    try:
+        
+        # Construir la ruta completa del archivo
+        image_path = os.path.join(yolo_output_dir, ruta_c, filename)
+        
+        # Imprimir el path que se está intentando acceder
+        print(f"Buscando la imagen en: {image_path}")
+        
+        if os.path.exists(image_path):
+            return send_from_directory(os.path.join(yolo_output_dir, ruta_c), filename)
+        else:
+            return f"Archivo {filename} no encontrado en {image_path}", 404
+
+    except Exception as e:
+        return f"Error al buscar la imagen procesada: {str(e)}", 500
+
 @app.route('/ver/caso/<id>', methods=['GET'])
 def ver_caso(id):
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     conexion = mySQL.connection
     cur = conexion.cursor()
 
     cur.execute("SELECT * FROM caso WHERE id_caso = %s", (id,))
     
     caso = cur.fetchone()
+    cur.execute("SELECT * FROM resultados WHERE caso = %s", (id,))
+    
+    resultados = cur.fetchone()
     cur.close()
 
-    return render_template('ver_caso.html', caso=caso)
+    detalles = None
+
+    if resultados:
+        valores = str(resultados['detalle'])[1:len(resultados['detalle'])-1].replace("'", "")
+        valores = valores.split(',')
+        detalles = [item.split() for item in valores]
+        resultados['ruta_imagen'] = str(resultados['ruta_imagen']).replace('\\', '/').split('/')
+        resultados['ruta_carpeta'] = str(resultados['ruta_imagen'][1])
+        resultados['ruta_imagen'] = str(resultados['ruta_imagen'][2])
+        print(detalles)
+        print(resultados['ruta_imagen'])
+
+        
+
+    return render_template('ver_caso.html', caso=caso, resultados=resultados, detalles = detalles)
 
 @app.route('/editar/caso/<id>', methods=['POST'])
 def editar_caso(id):
@@ -794,7 +852,7 @@ def editar_caso(id):
     nombre_caso = request.form['nombre_caso']
     descripcion_caso = request.form['descripcion']
     cur = mySQL.connection.cursor()
-    cur.execute('UPDATE caso SET nombre_caso = %s, descripcion = %s, id_usuario_modificado = %s WHERE id_caso = %s', (nombre_caso, descripcion_caso, id, id_usuario_modificado))
+    cur.execute('UPDATE caso SET nombre_caso = %s, descripcion = %s, id_usuario_modificado = %s WHERE id_caso = %s', (nombre_caso, descripcion_caso, id_usuario_modificado, id))
     mySQL.connection.commit()
 
     return redirect(url_for('listar_casos'))
@@ -806,6 +864,10 @@ def borrar_caso(id):
     cur.execute('UPDATE caso SET activo = 0 WHERE id_caso = %s', (id))
     mySQL.connection.commit()
     return redirect(url_for('listar_casos'))
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True)

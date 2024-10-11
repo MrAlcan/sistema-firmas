@@ -12,7 +12,7 @@
           </div><!-- /.col -->
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
               <!-- <li class="breadcrumb-item active">Dashboard v2</li> -->
             </ol>
           </div><!-- /.col -->
@@ -80,5 +80,13 @@
 
 
     <!-- /.content -->
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        // Selecciona el elemento <li> con el ID específico
+        const elemento = document.getElementById("nav_inicio");
+        // Agrega la clase "active"
+        elemento.classList.add("active");
+    });
+    </script>
   </div>
 {% endblock%}

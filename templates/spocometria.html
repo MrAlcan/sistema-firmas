@@ -305,6 +305,17 @@
     }
     
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+      const elemento = document.getElementById("nav_scopometria");
+      elemento.classList.add("active");
+
+      const li_activar = document.getElementById("li_firmas");
+        li_activar.classList.add("menu-is-opening");
+        li_activar.classList.add("menu-open");
+  });
+  </script>
 
 
 {% endblock %}

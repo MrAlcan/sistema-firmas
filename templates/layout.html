@@ -158,30 +158,33 @@
             >
               <li class="nav-header">GENERAL</li>
               <li class="nav-item">
-                <a href="#" class="nav-link active">
+                <a href="/dashboard" class="nav-link" id="nav_inicio">
                   <i class="nav-icon fas fa-th"></i>
                   <p>Inicio</p>
                 </a>
               </li>
-              <li class="nav-item">
-                <a href="#" class="nav-link">
-                  <i class="nav-icon fas fa-tachometer-alt"></i>
-                  <p>
-                    Peritos Investigativos
-                    <i class="right fas fa-angle-left"></i>
-                  </p>
-                </a>
-                <ul class="nav nav-treeview">
-                  <li class="nav-item">
-                    <a href="{{ url_for('usuarios') }}" class="nav-link">
-                      <i class="far fa-circle nav-icon"></i>
-                      <p>Usuarios</p>
-                    </a>
-                  </li>
-                </ul>
-              </li>
+              {% if session['admin']==1 %}
+                <li class="nav-item" id="li_usuarios">
+                  <a href="#" class="nav-link" >
+                    <i class="nav-icon fas fa-tachometer-alt"></i>
+                    <p>
+                      Peritos Investigativos
+                      <i class="right fas fa-angle-left"></i>
+                    </p>
+                  </a>
+                  <ul class="nav nav-treeview">
+                    <li class="nav-item">
+                      <a href="{{ url_for('usuarios') }}" class="nav-link" id="nav_usuarios">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Usuarios</p>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+              {% endif %}
+              
               <li class="nav-header">CASOS PERITALES</li>
-              <li class="nav-item">
+              <li class="nav-item" id="li_casos">
                 <a href="#" class="nav-link">
                   <i class="nav-icon fas fa-search"></i>
                   <p>
@@ -191,13 +194,13 @@
                 </a>
                 <ul class="nav nav-treeview">
                   <li class="nav-item">
-                    <a href="{{ url_for('new_case') }}" class="nav-link">
+                    <a href="{{ url_for('new_case') }}" class="nav-link" id="nav_agregar_caso">
                       <i class="far fa-circle nav-icon"></i>
                       <p>Agregar Caso</p>
                     </a>
                   </li>
                   <li class="nav-item">
-                    <a href="{{ url_for('listar_casos') }}" class="nav-link">
+                    <a href="{{ url_for('listar_casos') }}" class="nav-link" id="nav_listas_caso">
                       <i class="far fa-circle nav-icon"></i>
                       <p>Listar Caso</p>
                     </a>
@@ -205,7 +208,7 @@
                 </ul>
               </li>
               <li class="nav-header">DOCUMENTOLOGIA</li>
-              <li class="nav-item">
+              <li class="nav-item" id="li_firmas">
                 <a href="#" class="nav-link">
                   <i class="nav-icon fas fa-search"></i>
                   <p><i class="fas fa-angle-left right"></i>Firmas</p>
@@ -218,13 +221,13 @@
                     </a>
                   </li> -->
                   <li class="nav-item">
-                    <a href="{{ url_for('signatures') }}" class="nav-link">
+                    <a href="{{ url_for('signatures') }}" class="nav-link" id="nav_scopometria">
                       <i class="far fa-circle nav-icon"></i>
                       <p>Scopometria</p>
                     </a>
                   </li>
                   <li class="nav-item">
-                    <a href="{{ url_for('comparar') }}" class="nav-link">
+                    <a href="{{ url_for('comparar') }}" class="nav-link" id="nav_firmas">
                       <i class="far fa-circle nav-icon"></i>
                       <p>Comparar Firmas</p>
                     </a>
@@ -375,6 +378,7 @@
     <!-- AdminLTE -->
     <script src="{{url_for('static', filename='/js/pages/dashboard2.js')}}"></script>
     <!-- Page specific script -->
+    
     <script>
       $(function () {
         $("#example1")
