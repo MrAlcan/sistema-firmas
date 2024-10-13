@@ -7,6 +7,7 @@ import numpy as np
 import cv2
 import os
 from tensorflow.keras.models import load_model
+from tensorflow.keras import backend as K
 import subprocess
 import torch
 import shutil
@@ -15,6 +16,23 @@ import base64
 import random
 from datetime import datetime
 """ from pymysql.cursors import DictCursor  # Importación adicional necesaria """
+
+
+def euclidean_distance(vectors):
+    (feat_a, feat_b) = vectors
+    sum_square = K.sum(K.square(feat_a - feat_b), axis=1, keepdims=True)
+    return K.sqrt(K.maximum(sum_square, K.epsilon()))
+
+# Cargar el modelo
+siamese_model = load_model('signature_verification/siamese_model.h5', custom_objects={'euclidean_distance': euclidean_distance})
+
+def load_and_process_image(image_path, size=(224, 224)):
+    image = cv2.imread(image_path)
+    if image is not None:
+        image = cv2.resize(image, size)
+        image = image.astype('float32') / 255.0  # Normalizamos
+    return image
+
 
 def generar_codigo():
     return random.randint(100000, 999999)
@@ -616,35 +634,42 @@ def predict_comparar():
         # Leer y procesar las imágenes
         img_dubitada = cv2.imread(dubitada_path)
         img_dubitada = cv2.resize(img_dubitada, (224, 224))
-        img_dubitada = img_dubitada / 255.0
-        img_dubitada = np.expand_dims(img_dubitada, axis=0)
+        img_dubitada = img_dubitada.astype('float32') / 255.0
+        #img_dubitada = img_dubitada / 255.0
+        #img_dubitada = np.expand_dims(img_dubitada, axis=0)
 
         img_indubitable = cv2.imread(indubitable_path)
         img_indubitable = cv2.resize(img_indubitable, (224, 224))
-        img_indubitable = img_indubitable / 255.0
-        img_indubitable = np.expand_dims(img_indubitable, axis=0)
+        img_indubitable = img_indubitable.astype('float32') / 255.0
+        #img_indubitable = img_indubitable / 255.0
+        #img_indubitable = np.expand_dims(img_indubitable, axis=0)
+
+        prediction = siamese_model.predict([np.expand_dims(img_dubitada, axis=0), np.expand_dims(img_indubitable, axis=0)])
+        similarity_score = prediction[0][0] * 10  # Multiplicar por 100 para obtener el porcentaje
 
         # Predecir similitud
-        prediction_dubitada = model.predict(img_dubitada)
-        prediction_indubitable = model.predict(img_indubitable)
-        similarity_score = 1 - np.abs(prediction_dubitada - prediction_indubitable)
-        similarity_score_value = similarity_score[0][0]
+        #prediction_dubitada = model.predict(img_dubitada)
+        #prediction_indubitable = model.predict(img_indubitable)
+        #similarity_score = 1 - np.abs(prediction_dubitada - prediction_indubitable)
+        #similarity_score_value = similarity_score[0][0]
+
+        similarity_score_value = similarity_score
 
         # Determinar el resultado
-        threshold = 0.5  
+        threshold = 50.0  
         if similarity_score_value >= threshold:
             result = 'LA FIRMA ES GENUINA'
         else:
             result = 'LA FIRMA ES FALSA'
 
-        percentage = similarity_score_value * 100
+        #percentage = similarity_score_value * 100
         yolo_image_path = yolo_image_path.replace('\\', '/')  # Normalizar la ruta
 
         # Usar url_for para las imágenes
         url_dubitada = url_for('static', filename='uploads/' + secure_filename(file_dubitada.filename))
         url_indubitable = url_for('static', filename='uploads/' + secure_filename(file_indubitable.filename))
 
-        return render_template('comparar.html', result=result, percentage=percentage, 
+        return render_template('comparar.html', result=result, percentage=similarity_score_value, 
                                yolo_image=yolo_image_path, labels_resultados=labels_resultados, 
                                imagen1=url_dubitada, imagen2=url_indubitable)
 
@@ -735,34 +760,42 @@ def predict():
         # Procesamiento adicional de las firmas con el modelo de verificación de firmas
         img_doubtful = cv2.imread(image_doubtful_path)
         img_doubtful = cv2.resize(img_doubtful, (224, 224))
-        img_doubtful = img_doubtful / 255.0
-        img_doubtful = np.expand_dims(img_doubtful, axis=0)
+        img_doubtful = img_doubtful.astype('float32') / 255.0
+        #img_doubtful = img_doubtful / 255.0
+        #img_doubtful = np.expand_dims(img_doubtful, axis=0)
 
         img_indubitable = cv2.imread(image_indubitable_path)
         img_indubitable = cv2.resize(img_indubitable, (224, 224))
-        img_indubitable = img_indubitable / 255.0
-        img_indubitable = np.expand_dims(img_indubitable, axis=0)
+        img_indubitable = img_indubitable.astype('float32') / 255.0
+        #img_indubitable = img_indubitable / 255.0
+        #img_indubitable = np.expand_dims(img_indubitable, axis=0)
+
+        prediction = siamese_model.predict([np.expand_dims(img_doubtful, axis=0), np.expand_dims(img_indubitable, axis=0)])
+        similarity_score = prediction[0][0] * 10  # Multiplicar por 100 para obtener el porcentaje
+
 
         # Realizar predicciones con el modelo de verificación de firmas
-        prediction_doubtful = model.predict(img_doubtful)
-        prediction_indubitable = model.predict(img_indubitable)
+        #prediction_doubtful = model.predict(img_doubtful)
+        #prediction_indubitable = model.predict(img_indubitable)
 
-        print("predicciones")
-        print(prediction_doubtful)
-        print(prediction_indubitable)
+        #print("predicciones")
+        #print(prediction_doubtful)
+        #print(prediction_indubitable)
 
 
         # Comparación de resultados entre ambas predicciones
-        similarity_score = 1 - np.abs(prediction_doubtful - prediction_indubitable)
-        similarity_score_value = similarity_score[0][0]
+        #similarity_score = 1 - np.abs(prediction_doubtful - prediction_indubitable)
+        #similarity_score_value = similarity_score[0][0]
 
-        threshold = 0.5  # Umbral para definir la autenticidad
+        similarity_score_value = similarity_score
+
+        threshold = 50.0  # Umbral para definir la autenticidad
         if similarity_score_value >= threshold:
             result = 'LA FIRMA ES GENUINA'
         else:
             result = 'LA FIRMA ES FALSA'
 
-        percentage = similarity_score_value * 100
+        #percentage = similarity_score_value * 100
 
         cur = mySQL.connection.cursor()
         cur.execute("SELECT * FROM caso WHERE activo = 1")
@@ -774,7 +807,7 @@ def predict():
         
         
         # Renderizar el template HTML con el mensaje y la imagen de YOLOv7
-        return render_template('spocometria.html', result=result, percentage=percentage, yolo_image=yolo_image_path,casos=casos,labels_resultados=labels_resultados,imagen1=imagen1,imagen2=imagen2,casoid=casoid)
+        return render_template('spocometria.html', result=result, percentage=similarity_score_value, yolo_image=yolo_image_path,casos=casos,labels_resultados=labels_resultados,imagen1=imagen1,imagen2=imagen2,casoid=casoid)
 
     except Exception as e:
         return f'<p>Error al procesar las imágenes: {str(e)}</p>', 500
