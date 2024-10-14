@@ -7,6 +7,7 @@ import numpy as np
 import cv2
 import os
 from tensorflow.keras.models import load_model
+from tensorflow.keras import backend as K
 import subprocess
 import torch
 import shutil
@@ -15,6 +16,23 @@ import base64
 import random
 from datetime import datetime
 """ from pymysql.cursors import DictCursor  # Importación adicional necesaria """
+
+
+def euclidean_distance(vectors):
+    (feat_a, feat_b) = vectors
+    sum_square = K.sum(K.square(feat_a - feat_b), axis=1, keepdims=True)
+    return K.sqrt(K.maximum(sum_square, K.epsilon()))
+
+# Cargar el modelo
+siamese_model = load_model('signature_verification/siamese_model.h5', custom_objects={'euclidean_distance': euclidean_distance})
+
+def load_and_process_image(image_path, size=(224, 224)):
+    image = cv2.imread(image_path)
+    if image is not None:
+        image = cv2.resize(image, size)
+        image = image.astype('float32') / 255.0  # Normalizamos
+    return image
+
 
 def generar_codigo():
     return random.randint(100000, 999999)
@@ -108,10 +126,14 @@ def allowed_file(filename):
 
 @app.route('/')
 def home():
+    if 'id_usuario' in session:
+        return redirect(url_for('dashboard'))
     return render_template('login.html')
 
 @app.route('/dashboard')
 def dashboard():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     conexion = mySQL.connection
     cur = conexion.cursor()
 
@@ -125,6 +147,8 @@ def dashboard():
 
 @app.route('/acceso-login', methods=['GET', 'POST'])
 def login():
+    if 'id_usuario' in session:
+        return redirect(url_for('dashboard'))
     if request.method == 'POST':
         _user = request.form['user']
         _password = request.form['password']
@@ -244,6 +268,8 @@ def logout():
 
 @app.route('/usuarios')
 def usuarios():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     conexion = mySQL.connection
     cur = conexion.cursor()
 
@@ -256,6 +282,7 @@ def usuarios():
 
 @app.route('/new_user', methods=['POST'])
 def new_user():
+    
     if request.method == 'POST':
         # Capturando los datos enviados desde el formulario
         nombre = request.form['Nombre'].lower().strip()
@@ -427,6 +454,8 @@ def delete_user(id):
 
 @app.route('/nuevo_caso', methods=['GET', 'POST'])
 def new_case():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     if request.method == 'POST':
         # Verifica si el usuario está logueado
         if 'id_usuario' not in session:
@@ -480,6 +509,8 @@ def new_case():
 
 @app.route('/listar_casos')
 def listar_casos():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     cur = mySQL.connection.cursor()
     cur.execute("SELECT * FROM caso WHERE activo = 1")
     casos = cur.fetchall()
@@ -553,6 +584,8 @@ def guardar_datos():
 
 @app.route('/comparar')
 def comparar():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     cur = mySQL.connection.cursor()
     cur.execute("SELECT * FROM caso WHERE activo = 1")
     casos = cur.fetchall()
@@ -601,35 +634,42 @@ def predict_comparar():
         # Leer y procesar las imágenes
         img_dubitada = cv2.imread(dubitada_path)
         img_dubitada = cv2.resize(img_dubitada, (224, 224))
-        img_dubitada = img_dubitada / 255.0
-        img_dubitada = np.expand_dims(img_dubitada, axis=0)
+        img_dubitada = img_dubitada.astype('float32') / 255.0
+        #img_dubitada = img_dubitada / 255.0
+        #img_dubitada = np.expand_dims(img_dubitada, axis=0)
 
         img_indubitable = cv2.imread(indubitable_path)
         img_indubitable = cv2.resize(img_indubitable, (224, 224))
-        img_indubitable = img_indubitable / 255.0
-        img_indubitable = np.expand_dims(img_indubitable, axis=0)
+        img_indubitable = img_indubitable.astype('float32') / 255.0
+        #img_indubitable = img_indubitable / 255.0
+        #img_indubitable = np.expand_dims(img_indubitable, axis=0)
+
+        prediction = siamese_model.predict([np.expand_dims(img_dubitada, axis=0), np.expand_dims(img_indubitable, axis=0)])
+        similarity_score = prediction[0][0] * 10  # Multiplicar por 100 para obtener el porcentaje
 
         # Predecir similitud
-        prediction_dubitada = model.predict(img_dubitada)
-        prediction_indubitable = model.predict(img_indubitable)
-        similarity_score = 1 - np.abs(prediction_dubitada - prediction_indubitable)
-        similarity_score_value = similarity_score[0][0]
+        #prediction_dubitada = model.predict(img_dubitada)
+        #prediction_indubitable = model.predict(img_indubitable)
+        #similarity_score = 1 - np.abs(prediction_dubitada - prediction_indubitable)
+        #similarity_score_value = similarity_score[0][0]
+
+        similarity_score_value = similarity_score
 
         # Determinar el resultado
-        threshold = 0.5  
+        threshold = 50.0  
         if similarity_score_value >= threshold:
             result = 'LA FIRMA ES GENUINA'
         else:
             result = 'LA FIRMA ES FALSA'
 
-        percentage = similarity_score_value * 100
+        #percentage = similarity_score_value * 100
         yolo_image_path = yolo_image_path.replace('\\', '/')  # Normalizar la ruta
 
         # Usar url_for para las imágenes
         url_dubitada = url_for('static', filename='uploads/' + secure_filename(file_dubitada.filename))
         url_indubitable = url_for('static', filename='uploads/' + secure_filename(file_indubitable.filename))
 
-        return render_template('comparar.html', result=result, percentage=percentage, 
+        return render_template('comparar.html', result=result, percentage=similarity_score_value, 
                                yolo_image=yolo_image_path, labels_resultados=labels_resultados, 
                                imagen1=url_dubitada, imagen2=url_indubitable)
 
@@ -645,6 +685,8 @@ def signature_verification():
 
 @app.route('/firmas')
 def signatures():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     cur = mySQL.connection.cursor()
     cur.execute("SELECT * FROM caso WHERE activo = 1")
     casos = cur.fetchall()
@@ -718,34 +760,42 @@ def predict():
         # Procesamiento adicional de las firmas con el modelo de verificación de firmas
         img_doubtful = cv2.imread(image_doubtful_path)
         img_doubtful = cv2.resize(img_doubtful, (224, 224))
-        img_doubtful = img_doubtful / 255.0
-        img_doubtful = np.expand_dims(img_doubtful, axis=0)
+        img_doubtful = img_doubtful.astype('float32') / 255.0
+        #img_doubtful = img_doubtful / 255.0
+        #img_doubtful = np.expand_dims(img_doubtful, axis=0)
 
         img_indubitable = cv2.imread(image_indubitable_path)
         img_indubitable = cv2.resize(img_indubitable, (224, 224))
-        img_indubitable = img_indubitable / 255.0
-        img_indubitable = np.expand_dims(img_indubitable, axis=0)
+        img_indubitable = img_indubitable.astype('float32') / 255.0
+        #img_indubitable = img_indubitable / 255.0
+        #img_indubitable = np.expand_dims(img_indubitable, axis=0)
+
+        prediction = siamese_model.predict([np.expand_dims(img_doubtful, axis=0), np.expand_dims(img_indubitable, axis=0)])
+        similarity_score = prediction[0][0] * 10  # Multiplicar por 100 para obtener el porcentaje
+
 
         # Realizar predicciones con el modelo de verificación de firmas
-        prediction_doubtful = model.predict(img_doubtful)
-        prediction_indubitable = model.predict(img_indubitable)
+        #prediction_doubtful = model.predict(img_doubtful)
+        #prediction_indubitable = model.predict(img_indubitable)
 
-        print("predicciones")
-        print(prediction_doubtful)
-        print(prediction_indubitable)
+        #print("predicciones")
+        #print(prediction_doubtful)
+        #print(prediction_indubitable)
 
 
         # Comparación de resultados entre ambas predicciones
-        similarity_score = 1 - np.abs(prediction_doubtful - prediction_indubitable)
-        similarity_score_value = similarity_score[0][0]
+        #similarity_score = 1 - np.abs(prediction_doubtful - prediction_indubitable)
+        #similarity_score_value = similarity_score[0][0]
 
-        threshold = 0.5  # Umbral para definir la autenticidad
+        similarity_score_value = similarity_score
+
+        threshold = 50.0  # Umbral para definir la autenticidad
         if similarity_score_value >= threshold:
             result = 'LA FIRMA ES GENUINA'
         else:
             result = 'LA FIRMA ES FALSA'
 
-        percentage = similarity_score_value * 100
+        #percentage = similarity_score_value * 100
 
         cur = mySQL.connection.cursor()
         cur.execute("SELECT * FROM caso WHERE activo = 1")
@@ -757,7 +807,7 @@ def predict():
         
         
         # Renderizar el template HTML con el mensaje y la imagen de YOLOv7
-        return render_template('spocometria.html', result=result, percentage=percentage, yolo_image=yolo_image_path,casos=casos,labels_resultados=labels_resultados,imagen1=imagen1,imagen2=imagen2,casoid=casoid)
+        return render_template('spocometria.html', result=result, percentage=similarity_score_value, yolo_image=yolo_image_path,casos=casos,labels_resultados=labels_resultados,imagen1=imagen1,imagen2=imagen2,casoid=casoid)
 
     except Exception as e:
         return f'<p>Error al procesar las imágenes: {str(e)}</p>', 500
@@ -787,17 +837,58 @@ def show_yolo_image(filename):
     except Exception as e:
         return f"Error al buscar la imagen procesada: {str(e)}", 500
 
+@app.route('/mostrar_imagen_procesada/<ruta_c>/<filename>')
+def mostrar_imagen_procesada(ruta_c, filename):
+    yolo_output_dir = 'resultados_firmas'
+    print('-'*100)
+    print('entro a la ruta pa mostrar imagen')
+    
+    try:
+        
+        # Construir la ruta completa del archivo
+        image_path = os.path.join(yolo_output_dir, ruta_c, filename)
+        
+        # Imprimir el path que se está intentando acceder
+        print(f"Buscando la imagen en: {image_path}")
+        
+        if os.path.exists(image_path):
+            return send_from_directory(os.path.join(yolo_output_dir, ruta_c), filename)
+        else:
+            return f"Archivo {filename} no encontrado en {image_path}", 404
+
+    except Exception as e:
+        return f"Error al buscar la imagen procesada: {str(e)}", 500
+
 @app.route('/ver/caso/<id>', methods=['GET'])
 def ver_caso(id):
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
     conexion = mySQL.connection
     cur = conexion.cursor()
 
     cur.execute("SELECT * FROM caso WHERE id_caso = %s", (id,))
     
     caso = cur.fetchone()
+    cur.execute("SELECT * FROM resultados WHERE caso = %s", (id,))
+    
+    resultados = cur.fetchone()
     cur.close()
 
-    return render_template('ver_caso.html', caso=caso)
+    detalles = None
+
+    if resultados:
+        valores = str(resultados['detalle'])[1:len(resultados['detalle'])-1].replace("'", "")
+        valores = valores.split(',')
+        detalles = [item.split() for item in valores]
+        resultados['ruta_imagen'] = str(resultados['ruta_imagen']).replace('\\', '/').split('/')
+        resultados['ruta_carpeta'] = str(resultados['ruta_imagen'][1])
+        resultados['ruta_imagen'] = str(resultados['ruta_imagen'][2])
+        print(detalles)
+        print(resultados['ruta_imagen'])
+
+        
+
+    return render_template('ver_caso.html', caso=caso, resultados=resultados, detalles = detalles)
 
 @app.route('/editar/caso/<id>', methods=['POST'])
 def editar_caso(id):
@@ -806,7 +897,7 @@ def editar_caso(id):
     nombre_caso = request.form['nombre_caso']
     descripcion_caso = request.form['descripcion']
     cur = mySQL.connection.cursor()
-    cur.execute('UPDATE caso SET nombre_caso = %s, descripcion = %s, id_usuario_modificado = %s WHERE id_caso = %s', (nombre_caso, descripcion_caso, id, id_usuario_modificado))
+    cur.execute('UPDATE caso SET nombre_caso = %s, descripcion = %s, id_usuario_modificado = %s WHERE id_caso = %s', (nombre_caso, descripcion_caso, id_usuario_modificado, id))
     mySQL.connection.commit()
 
     return redirect(url_for('listar_casos'))
@@ -818,6 +909,10 @@ def borrar_caso(id):
     cur.execute('UPDATE caso SET activo = 0 WHERE id_caso = %s', (id))
     mySQL.connection.commit()
     return redirect(url_for('listar_casos'))
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
     app.run(debug=True)

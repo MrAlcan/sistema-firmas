@@ -42,8 +42,12 @@
                     <p>{{caso['fecha']}}</p>
                     <b>Fecha de Modificación del Caso:</b>
                     <p>{{caso['fecha_modificado']}}</p>
-                    {% if caso['f_procesada'] %}
-                        <p>proecesado</p>
+                    {% if detalles %}
+                        <b><i>Firmas procesadas</i></b>
+                        {% for nombre, valor in detalles %}
+                          <p><b>{{nombre}}:</b> {{valor}}</p>
+                          
+                        {% endfor %}
                         <!--    FALTA AUMENTAR DATOS DE RESULTADOS    -->
                         <p></p>
                     {% else %}
@@ -53,7 +57,7 @@
                 </div>
                 <div class="col-md-8">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="row">
                                 <b>Firma Dubitada</b>
                                 <br/>
@@ -65,7 +69,7 @@
                             
                             
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="row">
                                 <b>Firma Indubitada</b>
                                 <br/>
@@ -76,12 +80,15 @@
                             </div>
                         </div>
                     </div>
-                    {% if caso['f_procesada'] %}
-                        <div class="row">
+                    {% if resultados %}
+                        <div class="row text-center">
                             <b>Firma Procesada</b>
                             <br/>
                             <br/>
-                            <img src="{{ url_for('static', filename='uploads/' + caso['f_procesada']) }}" alt="Firma Dubitada" style="width: 250px; height: auto;">
+                        </div>
+                        <div class="row">
+
+                            <img src="{{ url_for('mostrar_imagen_procesada', ruta_c=resultados['ruta_carpeta'],filename=resultados['ruta_imagen'] )}}" alt="Resultado YOLO" style="width: 500px;">
                         </div>
                     {% endif %}
                     

@@ -17,6 +17,8 @@
           <ol class="breadcrumb float-sm-right">
             <li class="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
             <li class="breadcrumb-item active">Agregar Caso</li>
+            <li class="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
+            <li class="breadcrumb-item active">Agregar Caso</li>
           </ol>
         </div>
       </div>
@@ -103,12 +105,13 @@
                   
                 </div>
                 <div class="modal-footer justify-content-center">
-                  <button type="reset" class="btn btn-danger btn-flat pull-left"><i class="fa fa-close"></i>Eliminar Datos</button>
                   
                   
-                  <button type="button" class="btn btn-primary " id="openModalBtn">Editar Firma 1</button>
                   
-                  <button type="button" class="btn btn-primary " id="openModalBtn2">Editar Firma 2</button>
+                  <button type="button" class="btn btn-success " id="openModalBtn"><i class="fa fa-edit"></i> Firma Dubitada</button>
+                  
+                  <button type="button" class="btn btn-warning " id="openModalBtn2"><i class="fa fa-edit"></i> Firma Indubitada</button>
+                  <button type="reset" class="btn btn-danger btn-flat pull-left"><i class="fa fa-trash"></i> Eliminar Datos</button>
                   <button type="submit" class="btn btn-primary btn-flat" name="add"><i class="fa fa-save"></i> Guardar</button>
                 </div>
               </form>
@@ -133,7 +136,7 @@
   <div class="modal-dialog modal-lg" role="document">
       <div class="modal-content">
           <div class="modal-header">
-              <h5 class="modal-title" id="cropModalLabel">Recortar Imagen</h5>
+              <h5 class="modal-title" id="cropModalLabel">Editar Firma Dubitada</h5>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                   <span aria-hidden="true">&times;</span>
               </button>
@@ -166,8 +169,8 @@
               </div>
           </div>
           <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-              <button type="button" class="btn btn-primary" id="guardar">Guardar</button>
+              <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fa fa-times"></i> Cerrar</button>
+              <button type="button" class="btn btn-primary" id="guardar"><i class="fa fa-save"></i> Guardar</button>
               
           </div>
       </div>
@@ -177,7 +180,7 @@
   <div class="modal-dialog modal-lg" role="document">
       <div class="modal-content">
           <div class="modal-header">
-              <h5 class="modal-title" id="cropModalLabel2">Recortar Imagen 2</h5>
+              <h5 class="modal-title" id="cropModalLabel2">Editar Firma Indubitada</h5>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                   <span aria-hidden="true">&times;</span>
               </button>
@@ -210,8 +213,8 @@
               </div>
           </div>
           <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-              <button type="button" class="btn btn-primary" id="guardar2">Guardar</button>
+              <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="fa fa-times"></i> Cerrar</button>
+              <button type="button" class="btn btn-primary" id="guardar2"><i class="fa fa-save"></i> Guardar</button>
               
           </div>
       </div>
