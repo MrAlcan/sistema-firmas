@@ -1,0 +1,32 @@
+#image, #image2 {
+    max-width: 100%;
+}
+.modal-body {
+    display: flex;
+}
+.crop-container {
+    width: 50%;
+    margin-top: 40px;
+    padding: 10px;
+    overflow: hidden; 
+    position: relative; 
+    height: 400px; 
+}
+.preview-container {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+#preview, #preview2 {
+    max-width: 100%;
+    display: none; 
+}
+.controls {
+    margin-left: 180px;
+    width: 100%;
+}
+.controls input {
+    margin-bottom: 10px; 
+}

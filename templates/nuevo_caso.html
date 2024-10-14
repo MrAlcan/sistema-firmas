@@ -1,4 +1,10 @@
 {% extends 'layout.html' %} {% block body%}
+
+<link rel="stylesheet" href="{{url_for('static', filename='/css/modal.css')}}"/>
+<link rel="stylesheet" href="{{url_for('static', filename='/plugins/cropperjs/cropper.css')}}"/>
+<script src="{{url_for('static', filename='/plugins/cropperjs/cropper.js')}}"></script>
+
+
 <div class="content-wrapper">
   <!-- Content Header (Page header) -->
   <section class="content-header">
@@ -9,8 +15,8 @@
         </div>
         <div class="col-sm-6">
           <ol class="breadcrumb float-sm-right">
-            <li class="breadcrumb-item"><a href="#">Home</a></li>
-            <li class="breadcrumb-item active">General Form</li>
+            <li class="breadcrumb-item"><a href="/dashboard">Inicio</a></li>
+            <li class="breadcrumb-item active">Agregar Caso</li>
           </ol>
         </div>
       </div>
@@ -84,7 +90,7 @@
                       <label class="custom-file-label" for="f_dubitada">Buscar</label> <!-- Aquí ya cambiamos el texto a "Buscar" -->
                     </div>
                   </div>
-                  <img id="f_dubitada_preview" src="#" alt="Vista previa de la firma dubitada" style="display: none; margin-top: 10px; max-width: 100px;" />
+                  
                 </div>               
                 <div class="form-group">
                   <label for="f_indubitada">Firma Indubitada</label>
@@ -94,10 +100,15 @@
                       <label class="custom-file-label" for="f_indubitada">Buscar</label> <!-- Cambiado aquí también -->
                     </div>
                   </div>
-                  <img id="f_indubitada_preview" src="#" alt="Vista previa de la firma indubitada" style="display: none; margin-top: 10px; max-width: 100px;" />
+                  
                 </div>
                 <div class="modal-footer justify-content-center">
                   <button type="reset" class="btn btn-danger btn-flat pull-left"><i class="fa fa-close"></i>Eliminar Datos</button>
+                  
+                  
+                  <button type="button" class="btn btn-primary " id="openModalBtn">Editar Firma 1</button>
+                  
+                  <button type="button" class="btn btn-primary " id="openModalBtn2">Editar Firma 2</button>
                   <button type="submit" class="btn btn-primary btn-flat" name="add"><i class="fa fa-save"></i> Guardar</button>
                 </div>
               </form>
@@ -114,6 +125,97 @@
     <!-- /.container-fluid -->
   </section>
   <!-- /.content -->
+</div>
+
+
+
+<div class="modal fade" id="cropModal" tabindex="-1" role="dialog" aria-labelledby="cropModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="cropModalLabel">Recortar Imagen</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+          </div>
+          <div class="modal-body">
+              <div class="crop-container">
+                  <img id="image" src="" alt="Imagen a recortar">
+              </div>
+              <div class="preview-container">
+                  <div class="d-flex justify-content-center align-items-center" style="height: 340px; width: 300px;">
+                      <img id="preview" src="" alt="Vista previa">
+                  </div>
+                  
+                  <div class="controls">
+                      <div class="row">
+                          <div class="col-12 mb-3">
+                              <label for="brightness">Brillo:</label>
+                              <input type="range" id="brightness" min="0" max="200" value="100">
+                          </div>
+                          <div class="col-12 mb-3">
+                              <label for="contrast">Contraste:</label>
+                              <input type="range" id="contrast" min="0" max="200" value="100">
+                          </div>
+                          <div class="col-12 mb-3">
+                              <label for="rotation">Rotación:</label>
+                              <input type="range" id="rotation" min="-180" max="180" value="0">
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+              <button type="button" class="btn btn-primary" id="guardar">Guardar</button>
+              
+          </div>
+      </div>
+  </div>
+</div>
+<div class="modal fade" id="cropModal2" tabindex="-1" role="dialog" aria-labelledby="cropModalLabel2" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="cropModalLabel2">Recortar Imagen 2</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+          </div>
+          <div class="modal-body">
+              <div class="crop-container">
+                  <img id="image2" src="" alt="Imagen a recortar 2">
+              </div>
+              <div class="preview-container">
+                  <div class="d-flex justify-content-center align-items-center" style="height: 340px; width: 300px;">
+                      <img id="preview2" src="" alt="Vista previa 2">
+                  </div>
+                  
+                  <div class="controls">
+                      <div class="row">
+                          <div class="col-12 mb-3">
+                              <label for="brightness2">Brillo:</label>
+                              <input type="range" id="brightness2" min="0" max="200" value="100">
+                          </div>
+                          <div class="col-12 mb-3">
+                              <label for="contrast2">Contraste:</label>
+                              <input type="range" id="contrast2" min="0" max="200" value="100">
+                          </div>
+                          <div class="col-12 mb-3">
+                              <label for="rotation2">Rotación:</label>
+                              <input type="range" id="rotation2" min="-180" max="180" value="0">
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+              <button type="button" class="btn btn-primary" id="guardar2">Guardar</button>
+              
+          </div>
+      </div>
+  </div>
 </div>
 
 <script>
@@ -141,13 +243,208 @@
     input.nextElementSibling.innerText = fileName; // Actualiza el label con el nombre del archivo
   }
 
-  // Cambiar el texto de "Browse" a "Buscar" para todos los inputs de archivo al cargar la página
+ 
   document.addEventListener('DOMContentLoaded', function() {
     const fileInputs = document.querySelectorAll('.custom-file-input');
     fileInputs.forEach(input => {
-      input.nextElementSibling.innerText = 'Buscar'; // Cambia el texto del botón a "Buscar"
+      input.nextElementSibling.innerText = 'Buscar'; 
     });
   });
 </script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+
+    const elemento = document.getElementById("nav_agregar_caso");
+    elemento.classList.add("active");
+
+    const li_activar = document.getElementById("li_casos");
+    li_activar.classList.add("menu-is-opening");
+    li_activar.classList.add("menu-open");
+});
+</script>
+<script>
+  let cropper;
+
+document.getElementById('openModalBtn').addEventListener('click', function () {
+    const input = document.getElementById('f_dubitada');
+    const file = input.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function (event) {
+        document.getElementById('image').src = event.target.result;
+        $('#cropModal').modal('show');
+    };
+
+    if (file) {
+        reader.readAsDataURL(file);
+    }
+});
+$('#cropModal').on('shown.bs.modal', function () {
+    const image = document.getElementById('image');
+    cropper = new Cropper(image, {
+        aspectRatio: NaN,
+        viewMode: 1,
+        crop: function(event) {
+            const canvas = cropper.getCroppedCanvas();
+            const preview = document.getElementById('preview');
+            preview.src = canvas.toDataURL(); 
+            preview.style.display = 'block'; 
+        }
+    });
+});
+
+
+$('#cropModal').on('hidden.bs.modal', function () {
+    cropper.destroy();
+    document.getElementById('preview').style.display = 'none'; 
+});
+
+function updatePreview() {
+    const brightness = document.getElementById('brightness').value;
+    const contrast = document.getElementById('contrast').value;
+    const rotation = document.getElementById('rotation').value;
+    
+    const preview = document.getElementById('preview');
+    preview.style.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+    preview.style.transform = `rotate(${rotation}deg)`;
+}
+
+document.getElementById('brightness').addEventListener('input', updatePreview);
+document.getElementById('contrast').addEventListener('input', updatePreview);
+document.getElementById('rotation').addEventListener('input', updatePreview);
+
+document.getElementById('guardar').addEventListener('click', function () {
+  const canvas = cropper.getCroppedCanvas(); 
+  const brightness = document.getElementById('brightness').value;
+  const contrast = document.getElementById('contrast').value;
+  const rotation = document.getElementById('rotation').value;
+  const aspectRatio = canvas.height / canvas.width;
+  const targetWidth = 640;
+  const targetHeight = targetWidth * aspectRatio;
+  const tempCanvas = document.createElement('canvas');
+  const tempContext = tempCanvas.getContext('2d');
+  let rotatedWidth = targetWidth;
+  let rotatedHeight = targetHeight;
+
+  if (rotation !== "0") {
+      const radians = rotation * Math.PI / 180;
+      rotatedWidth = Math.abs(targetWidth * Math.cos(radians)) + Math.abs(targetHeight * Math.sin(radians));
+      rotatedHeight = Math.abs(targetWidth * Math.sin(radians)) + Math.abs(targetHeight * Math.cos(radians));
+  }
+  
+  tempCanvas.width = rotatedWidth;
+  tempCanvas.height = rotatedHeight;
+  tempContext.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+
+  if (rotation !== "0") {
+      tempContext.translate(rotatedWidth / 2, rotatedHeight / 2);
+      tempContext.rotate(rotation * Math.PI / 180);
+      tempContext.drawImage(canvas, -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight);
+  } else {
+      tempContext.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+  }
+  tempCanvas.toBlob(function(blob) {
+      const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0]; 
+      const file = new File([blob], `imagen_editada_${timestamp}.png`, { type: 'image/png' });
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      document.getElementById('f_dubitada').files = dataTransfer.files;
+      $('#cropModal').modal('hide');
+  }, 'image/png');
+});
+
+let cropper2;
+
+document.getElementById('openModalBtn2').addEventListener('click', function () {
+    const input = document.getElementById('f_indubitada');
+    const file = input.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function (event) {
+        document.getElementById('image2').src = event.target.result;
+        $('#cropModal2').modal('show');
+    };
+
+    if (file) {
+        reader.readAsDataURL(file);
+    }
+});
+
+$('#cropModal2').on('shown.bs.modal', function () {
+    const image = document.getElementById('image2');
+    cropper2 = new Cropper(image, {
+        aspectRatio: NaN,
+        viewMode: 1,
+        crop: function(event) {
+            const canvas = cropper2.getCroppedCanvas();
+            const preview = document.getElementById('preview2');
+            preview.src = canvas.toDataURL();
+            preview.style.display = 'block'; 
+        }
+    });
+});
+
+$('#cropModal2').on('hidden.bs.modal', function () {
+    cropper2.destroy();
+    document.getElementById('preview2').style.display = 'none'; 
+});
+
+function updatePreview2() {
+    const brightness = document.getElementById('brightness2').value;
+    const contrast = document.getElementById('contrast2').value;
+    const rotation = document.getElementById('rotation2').value;
+    const preview = document.getElementById('preview2');
+    preview.style.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+    preview.style.transform = `rotate(${rotation}deg)`;
+}
+
+document.getElementById('brightness2').addEventListener('input', updatePreview2);
+document.getElementById('contrast2').addEventListener('input', updatePreview2);
+document.getElementById('rotation2').addEventListener('input', updatePreview2);
+
+document.getElementById('guardar2').addEventListener('click', function () {
+  const canvas = cropper2.getCroppedCanvas(); 
+  const brightness = document.getElementById('brightness2').value;
+  const contrast = document.getElementById('contrast2').value;
+  const rotation = document.getElementById('rotation2').value;
+  const aspectRatio = canvas.height / canvas.width;
+  const targetWidth = 640;
+  const targetHeight = targetWidth * aspectRatio;
+  const tempCanvas = document.createElement('canvas');
+  const tempContext = tempCanvas.getContext('2d');
+  let rotatedWidth = targetWidth;
+  let rotatedHeight = targetHeight;
+
+  if (rotation !== "0") {
+      const radians = rotation * Math.PI / 180;
+      rotatedWidth = Math.abs(targetWidth * Math.cos(radians)) + Math.abs(targetHeight * Math.sin(radians));
+      rotatedHeight = Math.abs(targetWidth * Math.sin(radians)) + Math.abs(targetHeight * Math.cos(radians));
+  }
+  
+  tempCanvas.width = rotatedWidth;
+  tempCanvas.height = rotatedHeight;
+  tempContext.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+
+  if (rotation !== "0") {
+      tempContext.translate(rotatedWidth / 2, rotatedHeight / 2);
+      tempContext.rotate(rotation * Math.PI / 180);
+      tempContext.drawImage(canvas, -targetWidth / 2, -targetHeight / 2, targetWidth, targetHeight);
+  } else {
+      tempContext.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+  }
+
+  tempCanvas.toBlob(function(blob) {
+      const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0]; 
+      const file = new File([blob], `imagen_procesada_${timestamp}.png`, { type: 'image/png' });
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      document.getElementById('f_indubitada').files = dataTransfer.files;
+      $('#cropModal2').modal('hide');
+  }, 'image/png');
+});
+  </script>
+  
+<script>
+
 
 {% endblock%}

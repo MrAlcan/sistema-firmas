@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cropper con Rotación</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+</head>
+<body>
+
+<div class="container mt-5">
+    <h2 class="text-center">Cropper con Botones de Rotación</h2>
+
+    <!-- Imagen que se va a editar -->
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-6">
+            <img id="imageToEdit" src="https://via.placeholder.com/500" alt="Imagen para editar" style="max-width: 100%;">
+        </div>
+    </div>
+
+    <!-- Botones para rotar la imagen -->
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-3 text-center">
+            <button class="btn btn-primary" id="rotateLeft">Rotar Izquierda</button>
+        </div>
+        <div class="col-md-3 text-center">
+            <button class="btn btn-primary" id="rotateRight">Rotar Derecha</button>
+        </div>
+    </div>
+
+    <!-- Botón para guardar cambios -->
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-6 text-center">
+            <button class="btn btn-success" id="guardarCambiosImagen">Guardar Cambios</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1" role="dialog" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Imagen Guardada</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                La imagen ha sido guardada exitosamente.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts necesarios -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+
+<script>
+    let cropper;
+
+    window.onload = function() {
+        const image = document.getElementById('imageToEdit');
+
+        // Inicializa Cropper.js
+        cropper = new Cropper(image, {
+            aspectRatio: 1, // Ajusta la relación de aspecto según tus necesidades
+            viewMode: 1,
+            responsive: true,
+            zoomable: true,
+            scalable: true,
+            movable: true,
+        });
+
+        // Rotar la imagen a la izquierda
+        document.getElementById('rotateLeft').addEventListener('click', function () {
+            if (cropper) {
+                cropper.rotate(-45); // Rotar 45 grados a la izquierda
+            }
+        });
+
+        // Rotar la imagen a la derecha
+        document.getElementById('rotateRight').addEventListener('click', function () {
+            if (cropper) {
+                cropper.rotate(45); // Rotar 45 grados a la derecha
+            }
+        });
+
+        // Guardar los cambios y mostrar el modal de confirmación
+        document.getElementById('guardarCambiosImagen').addEventListener('click', function () {
+            const canvas = cropper.getCroppedCanvas();
+
+            // Aquí puedes hacer algo con el canvas, por ejemplo, convertirlo en un Blob o subirlo al servidor.
+            canvas.toBlob(function (blob) {
+                // Mostrar modal de confirmación
+                $('#confirmModal').modal('show');
+
+                // Puedes hacer una petición AJAX aquí para enviar el blob al servidor si lo necesitas
+                // Ejemplo:
+                // const formData = new FormData();
+                // formData.append('croppedImage', blob);
+                // fetch('/guardar-imagen', {
+                //    method: 'POST',
+                //    body: formData,
+                // }).then(response => {
+                //    console.log('Imagen guardada');
+                // });
+            });
+        });
+    };
+</script>
+
+</body>
+</html>
