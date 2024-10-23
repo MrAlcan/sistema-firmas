@@ -1,6 +1,3 @@
-Rasgos 0.30
-Espontaneidad 0.46
-Rasgos 0.75
-Rasgos 0.81
-Espontaneidad 0.88
-Espontaneidad 0.90
+Rasgos 0.35
+Corte/espacio 0.45
+Espontaneidad 0.49

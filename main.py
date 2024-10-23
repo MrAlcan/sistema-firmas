@@ -134,14 +134,28 @@ def home():
 def dashboard():
     if 'id_usuario' not in session:
         return redirect(url_for('login'))
-    conexion = mySQL.connection
-    cur = conexion.cursor()
+   
+    casoid = session.get('caso')
+    usuario_id = session.get('id_usuario')
+    cur = mySQL.connection.cursor()
 
-    cur.execute("SELECT * FROM caso WHERE activo = 1 ORDER BY fecha_modificado DESC LIMIT 10")
-    #cur.execute("SELECT * FROM caso ORDER BY fecha_modificado DESC")
+    if casoid:
+        query = """
+            SELECT * FROM caso 
+            WHERE activo = 1 AND (usuario_id = %s OR id_caso = %s) 
+            ORDER BY fecha_modificado DESC 
+            LIMIT 10
+        """
+        cur.execute(query, (usuario_id, casoid))
+    else:
+        query = "SELECT * FROM caso WHERE activo = 1 ORDER BY fecha_modificado DESC LIMIT 10"
+        cur.execute(query)
+    
     casos = cur.fetchall()
     cur.close()
+
     return render_template('dashboard.html', casos=casos)
+
 
 # INICIO DE SESION (INICIO)
 
@@ -233,6 +247,7 @@ def verificacion(cuerpo):
             session['email'] = account['email']
             session['usuario'] = account['usuario']
             session['contrasena'] = account['password']
+            session['caso'] = account['caso']
             return redirect(url_for('dashboard'))
         else:
             print('no entra')
@@ -258,6 +273,7 @@ def logout():
     session.pop('email',None)
     session.pop('usuario',None)
     session.pop('contrasena',None)
+    session.pop('caso',None)
     # Redirigir al login después de cerrar sesión
     return redirect(url_for('login'))  # Esto debe ser el nombre de la función de vista
 
@@ -272,13 +288,16 @@ def usuarios():
         return redirect(url_for('login'))
     conexion = mySQL.connection
     cur = conexion.cursor()
-
+    
     # Solo obtener los usuarios activos
     cur.execute("SELECT * FROM usuario WHERE activo = 1")
     usuarios = cur.fetchall()
+    cur.execute("SELECT * FROM caso")
+    casos = cur.fetchall()
+    
     cur.close()
 
-    return render_template('usuarios.html', Usuarios=usuarios)        
+    return render_template('usuarios.html', Usuarios=usuarios, casos=casos)        
 
 @app.route('/new_user', methods=['POST'])
 def new_user():
@@ -294,6 +313,7 @@ def new_user():
         user = request.form['user'].strip()
         password = request.form['password'].strip()
         sexo = request.form['sexo']
+        caso = request.form['caso']
 
         # Validación de imagen subida
         imagen = request.files['imagen']
@@ -330,9 +350,9 @@ def new_user():
         # Insertar los datos en la tabla `usuario`, incluyendo la imagen, sexo, y fecha
         cur = mySQL.connection.cursor()
         cur.execute("""
-            INSERT INTO usuario (nombre, apellido, edad, ci, telefono, email, usuario, password, sexo, imagen, fecha)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (nombre, apellido, edad, cedula, celular, email, user, password, sexo, imagen_filename, fecha_actual))
+            INSERT INTO usuario (nombre, apellido, edad, ci, telefono, email, usuario, password, sexo, imagen, fecha, caso)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (nombre, apellido, edad, cedula, celular, email, user, password, sexo, imagen_filename, fecha_actual, caso))
         mySQL.connection.commit()
         flash('Usuario creado exitosamente', 'success')
 
@@ -511,10 +531,42 @@ def new_case():
 def listar_casos():
     if 'id_usuario' not in session:
         return redirect(url_for('login'))
+    
+    casoid = session.get('caso')
+    usuario_id = session.get('id_usuario')
+    print("????????????????")
+    print(casoid)
     cur = mySQL.connection.cursor()
-    cur.execute("SELECT * FROM caso WHERE activo = 1")
+    if casoid:
+        query = "SELECT * FROM caso WHERE activo = 1 AND (usuario_id = %s OR id_caso = %s)"
+        cur.execute(query, (usuario_id, casoid))
+    else:
+        query = "SELECT * FROM caso WHERE activo = 1"
+        cur.execute(query)
     casos = cur.fetchall()
     return render_template('list_casos.html', casos=casos)
+
+
+
+@app.route('/firmas')
+def signatures():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
+    
+
+    casoid = session.get('caso')
+    usuario_id = session.get('id_usuario')
+    cur = mySQL.connection.cursor()
+    if casoid:
+        query = "SELECT * FROM caso WHERE activo = 1 AND (usuario_id = %s OR id_caso = %s)"
+        cur.execute(query, (usuario_id, casoid))
+    else:
+        query = "SELECT * FROM caso WHERE activo = 1"
+        cur.execute(query)
+    casos = cur.fetchall()
+    casos = ''
+    return render_template('spocometria.html', casos=casos)
+
 
 
 @app.route('/filtrar', methods=['POST'])
@@ -522,26 +574,52 @@ def filtrar_casos():
     departamento = request.form.get('departamento')
     fecha_inicio = request.form.get('fecha_inicio')
     fecha_final = request.form.get('fecha_fin')
-    print("_____+++++++++")
-    print(fecha_inicio)
-    print(fecha_final)
+    casoid = session.get('caso')
+    usuario_id = session.get('id_usuario')
+
     query = "SELECT * FROM caso WHERE activo = 1"
-    
     filtros = []
+    params = []
+
+    if fecha_inicio:
+        try:
+            datetime.strptime(fecha_inicio, '%Y-%m-%d')  
+            filtros.append("fecha >= %s")
+            params.append(fecha_inicio)
+        except ValueError:
+            return "Fecha de inicio inválida", 400 
+
+    if fecha_final:
+        try:
+            datetime.strptime(fecha_final, '%Y-%m-%d')  
+            filtros.append("fecha <= %s")
+            params.append(fecha_final)
+        except ValueError:
+            return "Fecha final inválida", 400 
+
+
+    if fecha_inicio and fecha_final:
+        if fecha_inicio > fecha_final:
+            return "error fecha", 400
 
     if departamento:
-        filtros.append(f"departamento = '{departamento}'")
-    if fecha_inicio:
-        filtros.append(f"fecha >= '{fecha_inicio}'")
-    if fecha_final:
-        filtros.append(f"fecha <= '{fecha_final}'")
+        filtros.append("departamento = %s")
+        params.append(departamento)
+    
+    if casoid:
+        filtros.append("(usuario_id = %s OR id_caso = %s)")
+        params.extend([usuario_id, casoid])
 
     if filtros:
         query += " AND " + " AND ".join(filtros)
 
-    cur = mySQL.connection.cursor()
-    cur.execute(query)
-    casos = cur.fetchall()
+    try:
+        cur = mySQL.connection.cursor()
+        cur.execute(query, params)
+        casos = cur.fetchall()
+    except Exception as e:
+        print("Error al ejecutar la consulta:", e)
+        casos = []
 
     return render_template('spocometria.html', casos=casos)
 
@@ -683,14 +761,9 @@ def predict_comparar():
 def signature_verification():
     return render_template('/firmas.html') """
 
-@app.route('/firmas')
-def signatures():
-    if 'id_usuario' not in session:
-        return redirect(url_for('login'))
-    cur = mySQL.connection.cursor()
-    cur.execute("SELECT * FROM caso WHERE activo = 1")
-    casos = cur.fetchall()
-    return render_template('spocometria.html', casos=casos)
+
+
+
 
 """ @app.route('/listar_casos_c')
 def listar_casos_c():
@@ -804,7 +877,7 @@ def predict():
       
         yolo_image_path = yolo_image_path.replace('\\', '/')
 
-        
+        casos=''
         
         # Renderizar el template HTML con el mensaje y la imagen de YOLOv7
         return render_template('spocometria.html', result=result, percentage=similarity_score_value, yolo_image=yolo_image_path,casos=casos,labels_resultados=labels_resultados,imagen1=imagen1,imagen2=imagen2,casoid=casoid)
