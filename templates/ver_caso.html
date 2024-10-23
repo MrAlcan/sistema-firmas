@@ -1,4 +1,7 @@
 {% extends 'layout.html' %}
+<link rel="stylesheet" href="{{url_for('static', filename='/css/modal.css')}}"/>
+<link rel="stylesheet" href="{{url_for('static', filename='/plugins/cropperjs/cropper.css')}}"/>
+<script src="{{url_for('static', filename='/plugins/cropperjs/cropper.js')}}"></script>
 
 {% block body %}
 <div class="content-wrapper">
@@ -43,7 +46,10 @@
                     <b>Fecha de Modificación del Caso:</b>
                     <p>{{caso['fecha_modificado']}}</p>
                     {% if detalles %}
-                        <b><i>Firmas procesadas</i></b>
+                    <br/>    
+                    <hr>
+                        <b><i>Datos Firma procesada</i></b>
+                        <br/> 
                         {% for nombre, valor in detalles %}
                           <p><b>{{nombre}}:</b> {{valor}}</p>
                           
@@ -81,68 +87,83 @@
                         </div>
                     </div>
                     {% if resultados %}
+                          <br/>
+                            <br/>
                         <div class="row text-center">
                             <b>Firma Procesada</b>
                             <br/>
                             <br/>
                         </div>
                         <div class="row">
-
-                            <img src="{{ url_for('mostrar_imagen_procesada', ruta_c=resultados['ruta_carpeta'],filename=resultados['ruta_imagen'] )}}" alt="Resultado YOLO" style="width: 500px;">
-                        </div>
+                          <a href="#" data-bs-toggle="modal" data-bs-target="#cropModal">
+                              <img id="resultadoImagen" src="{{ url_for('mostrar_imagen_procesada', ruta_c=resultados['ruta_carpeta'], filename=resultados['ruta_imagen']) }}" alt="Resultado YOLO" style="width: 500px;">
+                          </a>
+                      </div>
                     {% endif %}
                     
                 </div>
                 
             </div>
-          <!--table id="example1" class="table table-bordered table-striped">
-            <thead>
-            <tr>
-              <th>#</th>
-              <th>Nombre del Caso</th>
-              <th>Departamento</th>
-              <th>Firma Dubitada</th>
-              <th>Firma Indubitada</th>
-              <th>Descripción</th>
-              <th>Acciones</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for caso in casos %}
-            <tr>
-              <td style="width:10px;">{{ caso['id_caso'] }}</td>
-              <td>{{ caso['nombre_caso'] }}</td>
-              <td class="text-center">{{ caso['departamento'] }}</td>
-              <td>
-                <img src="{{ url_for('static', filename='uploads/' + caso['f_dubitada']) }}" alt="Firma Dubitada" style="width: 100px; height: auto;">
-              </td>
-              <td>
-                <img src="{{ url_for('static', filename='uploads/' + caso['f_indubitada']) }}" alt="Firma Indubitada" style="width: 100px; height: auto;">
-              </td>              
-              <td>{{ caso['descripcion'] }}</td>
-              <td class="project-actions text-right" style="width:220px;">
-                  <a class="btn btn-primary btn-sm" href="#">
-                      <i class="fas fa-folder"></i>
-                      Ver
-                  </a>
-                  <a class="btn btn-info btn-sm" href="#">
-                      <i class="fas fa-pencil-alt"></i>
-                      Editar
-                  </a>
-                  <a class="btn btn-danger btn-sm" href="#">
-                      <i class="fas fa-trash"></i>
-                      Eliminar
-                  </a>
-              </td>
-          </tr>
-          {% endfor %}
-            </tbody>
-          </table-->
         </div>
         <!-- /.card-body -->
       </div>
+      <div class="modal fade" id="cropModal" tabindex="-1" role="dialog" aria-labelledby="cropModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cropModalLabel">Editar Firma Dubitada</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+                </div>
+                <div class="modal-body">
+                    <div class="crop-container">
+                        <img id="image" src="" alt="Imagen a recortar">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+    .crop-container img {
+        max-width: 100%;  
+        height: auto;     
+        display: block;  
+        margin: 0 auto;   
+    }
+    </style>
+    
       <!-- /.card -->
     </section>
     <!-- /.content -->
   </div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+<script>
+  let cropper;
+  document.querySelector('[data-bs-target="#cropModal"]').addEventListener('click', function () {
+      const resultadoImagenSrc = document.getElementById('resultadoImagen').src;
+      document.getElementById('image').src = resultadoImagenSrc;
+  });
+  $('#cropModal').on('shown.bs.modal', function () {
+      const image = document.getElementById('image');
+      cropper = new Cropper(image, {
+          aspectRatio: NaN,
+          viewMode: 1,
+          crop: function (event) {
+              const canvas = cropper.getCroppedCanvas();
+              const preview = document.getElementById('preview');
+              preview.src = canvas.toDataURL();
+              preview.style.display = 'block';
+          }
+      });
+  });
+
+  $('#cropModal').on('hidden.bs.modal', function () {
+      cropper.destroy();
+  });
+</script>
+
 {% endblock %}

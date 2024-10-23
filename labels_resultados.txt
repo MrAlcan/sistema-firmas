@@ -1,3 +1,3 @@
-Rasgos 0.35
-Corte/espacio 0.45
-Espontaneidad 0.49
+Espontaneidad 0.25
+Rasgos 0.28
+Espontaneidad 0.75

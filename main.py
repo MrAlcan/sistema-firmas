@@ -14,7 +14,7 @@ import shutil
 import json
 import base64
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 """ from pymysql.cursors import DictCursor  # Importación adicional necesaria """
 
 
@@ -172,25 +172,44 @@ def login():
         account = cur.fetchone()
 
         if account:
-            codigo_generado = generar_codigo()
 
-            correo_usuario = account['email']
+            hoy = datetime.now()
+            print(hoy)
+            fecha_codigo_usuario = account['fecha_codigo'].date()
 
-            enviar_codigo_por_correo(correo_usuario, codigo_generado)
-            
-            cur.execute('UPDATE usuario SET codigo_sesion = %s WHERE id_usuario = %s', (codigo_generado, account['id_usuario']))
-            mySQL.connection.commit()
-            fecha = serializar_fecha(account['fecha'])
-            cuerpo = {
-                'id_usuario' : account['id_usuario'],
-                'nombre' : account['nombre'],
-                'apellido' : account['apellido'],
-                'rol' : account['admin'],
-                'fecha' : fecha
-            }
-            cuerpo_encriptado = str(encriptar_json(cuerpo))
-            cuerpo_encriptado = cuerpo_encriptado[2:len(cuerpo_encriptado)-1]
-            return redirect(url_for('verificacion', cuerpo=cuerpo_encriptado))
+            if hoy.date() == fecha_codigo_usuario:
+                fecha = serializar_fecha(account['fecha'])
+                cuerpo = {
+                    'id_usuario' : account['id_usuario'],
+                    'nombre' : account['nombre'],
+                    'apellido' : account['apellido'],
+                    'rol' : account['admin'],
+                    'fecha' : fecha
+                }
+                cuerpo_encriptado = str(encriptar_json(cuerpo))
+                cuerpo_encriptado = cuerpo_encriptado[2:len(cuerpo_encriptado)-1]
+                return redirect(url_for('verificacion', cuerpo=cuerpo_encriptado))
+            else:
+
+                codigo_generado = generar_codigo()
+
+                correo_usuario = account['email']
+
+                enviar_codigo_por_correo(correo_usuario, codigo_generado)
+                
+                cur.execute('UPDATE usuario SET codigo_sesion = %s, fecha_codigo = %s WHERE id_usuario = %s', (codigo_generado, hoy, account['id_usuario']))
+                mySQL.connection.commit()
+                fecha = serializar_fecha(account['fecha'])
+                cuerpo = {
+                    'id_usuario' : account['id_usuario'],
+                    'nombre' : account['nombre'],
+                    'apellido' : account['apellido'],
+                    'rol' : account['admin'],
+                    'fecha' : fecha
+                }
+                cuerpo_encriptado = str(encriptar_json(cuerpo))
+                cuerpo_encriptado = cuerpo_encriptado[2:len(cuerpo_encriptado)-1]
+                return redirect(url_for('verificacion', cuerpo=cuerpo_encriptado))
             # Guardar los detalles del usuario en la sesión
             session['logueado'] = True
             session['id_usuario'] = account['id_usuario']
@@ -209,9 +228,11 @@ def login():
 @app.route('/verificacion/<cuerpo>', methods=['GET', 'POST'])
 def verificacion(cuerpo):
     datos_usuario = desencriptar_json(cuerpo)
-    print(datos_usuario)
+    print(datos_usuario['id_usuario'])
+    print(str(datos_usuario['id_usuario']))
+    id_usuario_ingreso = str(datos_usuario['id_usuario'])
     cur = mySQL.connection.cursor()
-    cur.execute('SELECT * FROM usuario WHERE id_usuario = %s', (str(datos_usuario['id_usuario'])))
+    cur.execute('SELECT * FROM usuario WHERE id_usuario = %s', (id_usuario_ingreso,))
     account = cur.fetchone()
     codigo_verificacion = account['codigo_sesion']
     fecha = deserializar_fecha(datos_usuario['fecha'])
@@ -347,6 +368,8 @@ def new_user():
         # Obtener la fecha actual para la columna 'fecha'
         fecha_actual = datetime.now()
 
+        fecha_codigo_def = '2020-10-22 11:35:00'
+
         # Insertar los datos en la tabla `usuario`, incluyendo la imagen, sexo, y fecha
         cur = mySQL.connection.cursor()
         cur.execute("""
@@ -476,11 +499,17 @@ def delete_user(id):
 def new_case():
     if 'id_usuario' not in session:
         return redirect(url_for('login'))
+    cur = mySQL.connection.cursor()
+    cur.execute("SELECT * FROM usuario WHERE admin = 0 AND activo = 1")
+    usuarios_peritos = cur.fetchall()
+    cur.close()
     if request.method == 'POST':
         # Verifica si el usuario está logueado
         if 'id_usuario' not in session:
             flash('Debes iniciar sesión para agregar un caso.', 'error')
             return redirect(url_for('login'))
+
+        
 
         # Capturando los datos del formulario
         tipo_caso = request.form['tipo_caso']
@@ -488,44 +517,61 @@ def new_case():
         descripcion = request.form['descripcion']
         departamento = request.form['departamento']
         id_usuario_creado = session['id_usuario']
-        
-        # Obtener los archivos de firma
-        f_dubitada = request.files['f_dubitada']
-        f_indubitada = request.files['f_indubitada']
-        
-        # Verificar si los archivos son permitidos
-        if not (f_dubitada and allowed_file(f_dubitada.filename) and f_indubitada and allowed_file(f_indubitada.filename)):
-            flash('Formato de archivo no permitido. Solo se aceptan imágenes PNG, JPG o JPEG.', 'error')
-            return redirect(url_for('new_case'))
+        usuario_designado = request.form['perito']
 
-        # Generar nombres seguros para los archivos de firma
-        f_dubitada_filename = secure_filename(f_dubitada.filename)
-        f_indubitada_filename = secure_filename(f_indubitada.filename)
-        
-        # Guardar los archivos en la carpeta 'uploads'
-        f_dubitada.save(os.path.join(app.config['UPLOAD_FOLDER_CASOS'], f_dubitada_filename))
-        f_indubitada.save(os.path.join(app.config['UPLOAD_FOLDER_CASOS'], f_indubitada_filename))
-
-
-        # Obtener el ID del usuario desde la sesión
-        usuario_id = session.get('id_usuario')
-
-        # Obtener la fecha actual
-        fecha_actual = datetime.now()
-
-        # Insertar los datos en la tabla `caso`
         cur = mySQL.connection.cursor()
         cur.execute("""
-            INSERT INTO caso (usuario_id, tipo_caso, nombre_caso, descripcion, departamento, fecha, f_dubitada, f_indubitada, id_usuario_creado, id_usuario_modificado)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (usuario_id, tipo_caso, nombre_caso, descripcion, departamento, fecha_actual, f_dubitada_filename, f_indubitada_filename, id_usuario_creado, id_usuario_creado))
-        mySQL.connection.commit()
+            SELECT COUNT(*) as cantidad FROM caso 
+            WHERE nombre_caso = %s AND departamento = %s
+        """, (nombre_caso, departamento))
+        resultado = cur.fetchone()['cantidad']
+        cur.close()
 
-        flash('Caso agregado exitosamente', 'success')
-        return redirect(url_for('listar_casos'))
+        if resultado > 0:
+            print("existe un caso con el mismo nombre")
+            flash('El nombre del caso ya existe en este departamento. Por favor, elige otro nombre.', 'error_nombre_caso')
+            return render_template('nuevo_caso.html', peritos=usuarios_peritos)
+        else:
+        
+            # Obtener los archivos de firma
+            f_dubitada = request.files['f_dubitada']
+            f_indubitada = request.files['f_indubitada']
+            
+            # Verificar si los archivos son permitidos
+            if not (f_dubitada and allowed_file(f_dubitada.filename) and f_indubitada and allowed_file(f_indubitada.filename)):
+                flash('Formato de archivo no permitido. Solo se aceptan imágenes PNG, JPG o JPEG.', 'error')
+                return redirect(url_for('new_case'))
+
+            # Generar nombres seguros para los archivos de firma
+            f_dubitada_filename = secure_filename(f_dubitada.filename)
+            f_indubitada_filename = secure_filename(f_indubitada.filename)
+            
+            # Guardar los archivos en la carpeta 'uploads'
+            f_dubitada.save(os.path.join(app.config['UPLOAD_FOLDER_CASOS'], f_dubitada_filename))
+            f_indubitada.save(os.path.join(app.config['UPLOAD_FOLDER_CASOS'], f_indubitada_filename))
+
+
+            # Obtener el ID del usuario desde la sesión
+            usuario_id = session.get('id_usuario')
+
+            # Obtener la fecha actual
+            fecha_actual = datetime.now()
+
+            f_procesado_def = 'no_procesado'
+
+            # Insertar los datos en la tabla `caso`
+            cur = mySQL.connection.cursor()
+            cur.execute("""
+                INSERT INTO caso (usuario_id, tipo_caso, nombre_caso, descripcion, departamento, fecha, f_dubitada, f_indubitada, f_procesada, id_usuario_creado, id_usuario_modificado)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (usuario_designado, tipo_caso, nombre_caso, descripcion, departamento, fecha_actual, f_dubitada_filename, f_indubitada_filename, f_procesado_def, id_usuario_creado, id_usuario_creado))
+            mySQL.connection.commit()
+
+            flash('Caso agregado exitosamente', 'success')
+            return redirect(url_for('listar_casos'))
 
     # Si es GET, solo renderiza el formulario de nuevo caso
-    return render_template('nuevo_caso.html')
+    return render_template('nuevo_caso.html', peritos = usuarios_peritos)
 
 @app.route('/listar_casos')
 def listar_casos():
@@ -545,6 +591,20 @@ def listar_casos():
         cur.execute(query)
     casos = cur.fetchall()
     return render_template('list_casos.html', casos=casos)
+
+@app.route('/listar_casos_procesados')
+def listar_casos_procesados():
+    if 'id_usuario' not in session:
+        return redirect(url_for('login'))
+    id_usuario_sesion = session['id_usuario']
+    cur = mySQL.connection.cursor()
+    cur.execute("""
+            SELECT * FROM caso 
+            WHERE activo = 1 AND f_procesada = 'procesado' AND usuario_id = %s
+        """, (id_usuario_sesion,))
+    #cur.execute("SELECT * FROM caso WHERE activo = 1")
+    casos = cur.fetchall()
+    return render_template('list_casos_procesados.html', casos=casos)
 
 
 
@@ -649,6 +709,12 @@ def guardar_datos():
     cur = mySQL.connection.cursor()
     query = "INSERT INTO resultados (ruta_imagen, detalle, caso, activo) VALUES (%s, %s, %s, %s)"
     cur.execute(query, (ruta_imagen, detalle, casoid, 1))  
+    mySQL.connection.commit()
+    cur.execute("""
+        UPDATE caso
+        SET f_procesada = 'procesado'
+        WHERE id_caso = %s
+    """, (casoid,))
     mySQL.connection.commit()
     cur.close()
     

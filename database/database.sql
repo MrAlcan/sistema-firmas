@@ -22,7 +22,8 @@ create table usuario(
 	publico boolean default 0,
 	encargado boolean default 0,
     codigo_sesion int default 0,
-    fecha_codigo DATETIME
+    fecha_codigo DATETIME,
+    caso INT
 );
 
 CREATE TABLE caso (
@@ -76,14 +77,14 @@ INSERT INTO usuario (
     fecha_codigo
 ) VALUES (
     1,                                  -- area_oficina_id
-    'Juan',                             -- nombre
-    'García',                           -- apellido
+    'Carlos',                             -- nombre
+    'Yujra',                           -- apellido
     '12345678',                         -- ci
     '987654321',                        -- telefono
     '30',                               -- edad
     'imagen_perfil.jpg',               -- imagen
     'Masculino',                        -- sexo
-    'nuevavidaparajuan@gmail.com',          -- email
+    'carlos.yujra.chambi@gmail.com',          -- email
     'admin',                       -- usuario
     'admin',              -- password
     NOW(),                              -- fecha (fecha y hora actual)
