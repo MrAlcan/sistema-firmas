@@ -133,9 +133,9 @@
                             
     
                             {% if result %}
-                            <div class="alert alert-info mt-3">
+                            <!--div class="alert alert-info mt-3">
                                 <p><strong>{{ result }} con un porcentaje de {{ percentage }}%</strong></p>
-                            </div>
+                            </div-->
                             {% endif %}
     
                            
@@ -158,6 +158,11 @@
                         </div>
                         <div class="card-body">
                             <form action='/guardar' method="POST" enctype="multipart/form-data">
+                            {% if result %}
+                            <div>
+                                <p>{{ result }} con un porcentaje de {{ percentage }}%</p>
+                            </div>
+                            {% endif %}
                             {% if yolo_image %}
                             <div class="row mt-3">
                                 <input type="hidden" id="detalles" name="detalles" class="form-control" value="{{ labels_resultados }}">

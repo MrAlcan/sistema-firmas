@@ -78,12 +78,15 @@
             </a>
             <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
               <div class="dropdown-item user-header text-center">
-                <img
-                  src="{{ url_for('static', filename='Users_Profile/perfil_usuarios/' + session['imagen']) }}"
-                  style="width: 150px; height: 150px;"
-                  class="img-circle"
-                  alt="User Image"
-                />
+                {% if session['imagen'] %}
+                  <img
+                    src="{{ url_for('static', filename='Users_Profile/perfil_usuarios/' + session['imagen']) }}"
+                    style="width: 150px; height: 150px;"
+                    class="img-circle"
+                    alt="User Image"
+                  />
+                {% endif %}
+                
                 <p>
                   <!-- Mostrar el nombre del usuario desde la sesión -->
                   {{ session['nombre'] }} {{ session['apellido'] }}
@@ -203,7 +206,13 @@
                   <li class="nav-item">
                     <a href="{{ url_for('listar_casos') }}" class="nav-link" id="nav_listas_caso">
                       <i class="far fa-circle nav-icon"></i>
-                      <p>Listar Caso</p>
+                      <p>Listar Casos No Procesados</p>
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="{{ url_for('listar_casos_procesados') }}" class="nav-link" id="nav_listas_caso_proc">
+                      <i class="far fa-circle nav-icon"></i>
+                      <p>Listar Casos Procesados</p>
                     </a>
                   </li>
                 </ul>

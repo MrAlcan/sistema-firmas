@@ -64,11 +64,38 @@
                 </div>
                 <div class="form-group">
                   <label class="col-form-label" for="nombre_caso">Nombre del Caso</label>
-                  <input type="text" class="form-control" name="nombre_caso" placeholder="Nombre del caso..." required />
+                  <input type="text" class="form-control" name="nombre_caso" placeholder="Nombre del caso..." pattern="[A-Za-z0-9*\s]{4,}" title="El nombre del debe tener al menos 4 letras." required />
+                  {% with messages = get_flashed_messages(with_categories=True) %}
+                    {% if messages %}
+                      <ul>
+                        {% for category, message in messages %}
+                          {% if category == 'error_nombre_caso' %}
+                            <li class="{{ category }} text-danger">{{ message }}</li>
+                          {% endif %}
+                        {% endfor %}
+                      </ul>
+                    {% endif %}
+                  {% endwith %}
                 </div>
                 <div class="form-group">
                   <label>Descripción</label>
-                  <textarea class="form-control" name="descripcion" rows="3" placeholder="Descripción del caso..." required></textarea>
+                  <textarea class="form-control" name="descripcion" rows="3" placeholder="Descripción del caso..." pattern="[A-Za-z0-9*\s]{4,}" title="La descripcion debe tener al menos 4 letras." required></textarea>
+                </div>
+                <div class="form-group">
+                  <label>Perito Asignado al Caso</label>
+                  <select class="custom-select form-control-border" name="perito" required>
+                    {% if session['admin']==0 %}
+                      <option selected value="{{session['id_usuario']}}">{{session['nombre']}} {{session['apellido']}}</option>
+                    {% else %}
+                      <option selected disabled>Selecciona un perito ...</option>
+                      {% if peritos %}
+                        {% for perito in peritos%}
+                          <option value="{{perito['id_usuario']}}">{{perito['nombre']}} {{perito['apellido']}}</option>
+                        {% endfor %}
+                      {% endif %}
+                    {% endif %}
+                    
+                  </select>
                 </div>
                 <div class="form-group">
                   <label for="departamento">Departamento</label>
