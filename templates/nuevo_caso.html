@@ -115,7 +115,8 @@
                   <label for="f_dubitada">Firma Dubitada</label>
                   <div class="input-group">
                     <div class="custom-file">
-                      <input type="file" class="custom-file-input" name="f_dubitada" id="f_dubitada" onchange="previewFile('f_dubitada_preview', this); updateFileName(this);" required />
+                      <input type="file" class="custom-file-input" name="f_dubitada" id="f_dubitada" onchange="previewFile('f_dubitada_preview', this); updateFileName(this);" required />\
+                      
                       <label class="custom-file-label" for="f_dubitada">Buscar</label> <!-- Aquí ya cambiamos el texto a "Buscar" -->
                     </div>
                   </div>
@@ -126,9 +127,12 @@
                   <div class="input-group">
                     <div class="custom-file">
                       <input type="file" class="custom-file-input" name="f_indubitada" id="f_indubitada" onchange="previewFile('f_indubitada_preview', this); updateFileName(this);" required />
+                      
                       <label class="custom-file-label" for="f_indubitada">Buscar</label> <!-- Cambiado aquí también -->
                     </div>
                   </div>
+                  <input type="hidden" classs="form-control" name="n_du_editado"/>
+                  <input type="hidden" classs="form-control" name="n_in_editado"/>
                   
                 </div>
                 <div class="modal-footer justify-content-center">
@@ -192,8 +196,10 @@
                             <label for="rotation">Rotación:</label>
                               <input type="number" class="mx-3"id="rotation" min="-180" max="180" value="0" style="width: 80px;">
                           </div>
-                        
-                        
+                          <div class="col-12 mb-3">
+                            <label for="editado2">Nuevo Nombre:</label>
+                            <input type="text" class="mx-1"id="editado2"  style="width: 120px;">
+                          </div>
                       </div>
                   </div>
               </div>
@@ -239,6 +245,11 @@
                             <label for="rotation">Rotación:</label>
                               <input type="number" class="mx-3"id="rotation2" min="-180" max="180" value="0" style="width: 80px;">
                           </div>
+
+                          <div class="col-12 mb-3">
+                            <label for="editado">Nuevo Nombre:</label>
+                              <input type="text" class="mx-1"id="editado"  style="width: 120px;">
+                          </div>
                       </div>
                   </div>
               </div>
@@ -253,6 +264,15 @@
 </div>
 
 <script>
+  function actualizarInputs(nombreModal) {
+    if (nombreModal === 'cropModal') {
+      const valorEditado = document.getElementById('editado2').value;
+      document.querySelector('input[name="n_du_editado"]').value = valorEditado;
+    } else if (nombreModal === 'cropModal2') {
+      const valorEditado2 = document.getElementById('editado').value;
+      document.querySelector('input[name="n_in_editado"]').value = valorEditado2;
+    }
+  }
   // Función para previsualizar la imagen subida
   function previewFile(previewId, input) {
     const file = input.files[0];
@@ -348,6 +368,7 @@ document.getElementById('contrast').addEventListener('input', updatePreview);
 document.getElementById('rotation').addEventListener('input', updatePreview);
 
 document.getElementById('guardar').addEventListener('click', function () {
+  actualizarInputs('cropModal');
   const canvas = cropper.getCroppedCanvas(); 
   const brightness = document.getElementById('brightness').value;
   const contrast = document.getElementById('contrast').value;
@@ -437,6 +458,7 @@ document.getElementById('contrast2').addEventListener('input', updatePreview2);
 document.getElementById('rotation2').addEventListener('input', updatePreview2);
 
 document.getElementById('guardar2').addEventListener('click', function () {
+  actualizarInputs('cropModal2');
   const canvas = cropper2.getCroppedCanvas(); 
   const brightness = document.getElementById('brightness2').value;
   const contrast = document.getElementById('contrast2').value;

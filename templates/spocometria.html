@@ -25,6 +25,19 @@
                             <form action='/filtrar' method="POST" enctype="multipart/form-data">
                             <div class="row mb-3">
                                 <div class="col-md-3">
+                                    <label for="rute">Asignar Caso</label>
+                                    <select class="custom-select form-control-border" name="rute" >   
+                                    <option value="" disabled selected>Seleccione un caso...</option> 
+                                    {% if casos2 %}
+                                        {% for dato in casos2 %}
+                                        <option value="{{dato.id_caso}}">{{dato.nombre_caso }}</option>
+                                        {% endfor %}
+                                            
+                                    {% endif %}
+                                    </select>
+
+                                </div>
+                                <div class="col-md-3">
                                     <label for="departamento">Departamento</label>
                                     <select id="departamento" name="departamento" class="form-control">
                                         <option value="">Selecciona un departamento</option>
@@ -39,15 +52,15 @@
                                         <option value="Pando">Pando</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label for="fecha_inicio">Fecha de inicio</label>
                                     <input type="date" id="fecha_inicio" name="fecha_inicio" class="form-control">
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <label for="fecha_final">Fecha final</label>
                                     <input type="date" id="fecha_final" name="fecha_fin" class="form-control">
                                 </div>
-                                <div class="col-md-3 d-flex align-items-end">
+                                <div class="col-md-2 d-flex align-items-end">
                                     <button type="submit" class="btn btn-primary w-100"><i class="fa fa-search"></i> Buscar</button>
                                 </div>
                             </div>
@@ -80,9 +93,12 @@
                                             <button type="button" class="btn btn-info btn-sm" 
                                                     onclick="showImages('{{ url_for('static', filename='uploads/' + caso['f_dubitada']) }}', 
                                                                         '{{ url_for('static', filename='uploads/' + caso['f_indubitada']) }}',
-                                                                        '{{ caso['id_caso'] }}');">
+                                                                        '{{ caso['id_caso'] }}',
+                                                                        '{{ caso['n_dubitada'] }}',
+                                                                        '{{ caso['n_indubitada'] }}');">
                                                 <i class="fas fa-eye"></i> Ver
                                             </button>
+                                    
                                         </td>
                                     </tr>
                                     {% endfor %}
@@ -110,12 +126,14 @@
                                         <label for="imageDoubtful">Firma Dubitada</label><br>
                                         <input type="hidden" name="imageDoubtful" id="imageDoubtful" required>
                                         <canvas id="canvasDoubtful" style="display: block; border: 1px solid #000; max-width: 100%; max-height: 300px;"></canvas>
+                                        <input type="text" class="form-control mt-3 text-center" name="n_du_editado" id="n_du_editado" disabled/>
                                     </div>
                                     <div class="col-md-5 text-center">
                                         <label for="imageIndubitable">Firma Indubitada</label><br>
                                         <input type="hidden" name="imageIndubitable" id="imageIndubitable" required>
                                         <input type="hidden" id="casoid" name="casoid" class="form-control" required>
                                         <canvas id="canvasIndubitable" style="display: block; border: 1px solid #000; max-width: 100%; max-height: 300px;"></canvas>
+                                        <input type="text" class="form-control mt-3 text-center" name="n_in_editado" id="n_in_editado" disabled/>
                                     </div>
                                 </div>
                                 <div class="modal-footer justify-content-center">
@@ -265,13 +283,14 @@
       }
     }
     
-    function showImages(dubitadaUrl, indubitadaUrl, casoId) {
+    function showImages(dubitadaUrl, indubitadaUrl, casoId, nDubitada, nIndubitada){
       
       document.getElementById('imageDoubtful').value = dubitadaUrl;
       document.getElementById('imageIndubitable').value = indubitadaUrl;
       loadImages(dubitadaUrl, indubitadaUrl); 
       document.getElementById('casoid').value = casoId;
-      
+      document.getElementById('n_du_editado').value = nDubitada;
+      document.getElementById('n_in_editado').value = nIndubitada;
     }
 
     document.getElementById('signatureForm').addEventListener('submit', function() {

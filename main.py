@@ -509,8 +509,8 @@ def new_case():
             flash('Debes iniciar sesión para agregar un caso.', 'error')
             return redirect(url_for('login'))
 
-        
-
+        n_du_editado = request.form['n_du_editado']
+        n_in_editado = request.form['n_in_editado']
         # Capturando los datos del formulario
         tipo_caso = request.form['tipo_caso']
         nombre_caso = request.form['nombre_caso']
@@ -562,9 +562,9 @@ def new_case():
             # Insertar los datos en la tabla `caso`
             cur = mySQL.connection.cursor()
             cur.execute("""
-                INSERT INTO caso (usuario_id, tipo_caso, nombre_caso, descripcion, departamento, fecha, f_dubitada, f_indubitada, f_procesada, id_usuario_creado, id_usuario_modificado)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (usuario_designado, tipo_caso, nombre_caso, descripcion, departamento, fecha_actual, f_dubitada_filename, f_indubitada_filename, f_procesado_def, id_usuario_creado, id_usuario_creado))
+                INSERT INTO caso (usuario_id, tipo_caso, nombre_caso, descripcion, departamento, fecha, f_dubitada, f_indubitada, f_procesada, id_usuario_creado, id_usuario_modificado, n_dubitada, n_indubitada)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (usuario_designado, tipo_caso, nombre_caso, descripcion, departamento, fecha_actual, f_dubitada_filename, f_indubitada_filename, f_procesado_def, id_usuario_creado, id_usuario_creado,n_du_editado,n_in_editado))
             mySQL.connection.commit()
 
             flash('Caso agregado exitosamente', 'success')
@@ -613,6 +613,21 @@ def signatures():
     if 'id_usuario' not in session:
         return redirect(url_for('login'))
     
+    casoid2 = session.get('caso')
+    usuario_id2 = session.get('id_usuario')
+
+    cur2 = mySQL.connection.cursor()
+    if casoid2:
+        query2 = "SELECT * FROM caso WHERE activo = 1 AND (usuario_id = %s OR id_caso = %s)"
+        cur2.execute(query2, (usuario_id2, casoid2))
+    else:
+        query2 = "SELECT * FROM caso WHERE activo = 1"
+        cur2.execute(query2)
+    casos2 = cur2.fetchall()
+
+
+
+
 
     casoid = session.get('caso')
     usuario_id = session.get('id_usuario')
@@ -625,13 +640,14 @@ def signatures():
         cur.execute(query)
     casos = cur.fetchall()
     casos = ''
-    return render_template('spocometria.html', casos=casos)
+    return render_template('spocometria.html', casos=casos,casos2=casos2)
 
 
 
 @app.route('/filtrar', methods=['POST'])
 def filtrar_casos():
     departamento = request.form.get('departamento')
+    rute = request.form.get('rute')
     fecha_inicio = request.form.get('fecha_inicio')
     fecha_final = request.form.get('fecha_fin')
     casoid = session.get('caso')
@@ -670,6 +686,10 @@ def filtrar_casos():
         filtros.append("(usuario_id = %s OR id_caso = %s)")
         params.extend([usuario_id, casoid])
 
+    if rute:
+        filtros.append("id_caso = %s")
+        params.append(rute)
+
     if filtros:
         query += " AND " + " AND ".join(filtros)
 
@@ -680,8 +700,21 @@ def filtrar_casos():
     except Exception as e:
         print("Error al ejecutar la consulta:", e)
         casos = []
+    
 
-    return render_template('spocometria.html', casos=casos)
+    casoid2 = session.get('caso')
+    usuario_id2 = session.get('id_usuario')
+
+    cur2 = mySQL.connection.cursor()
+    if casoid2:
+        query2 = "SELECT * FROM caso WHERE activo = 1 AND (usuario_id = %s OR id_caso = %s)"
+        cur2.execute(query2, (usuario_id2, casoid2))
+    else:
+        query2 = "SELECT * FROM caso WHERE activo = 1"
+        cur2.execute(query2)
+    casos2 = cur2.fetchall()
+
+    return render_template('spocometria.html', casos=casos,casos2=casos2)
 
 
 
